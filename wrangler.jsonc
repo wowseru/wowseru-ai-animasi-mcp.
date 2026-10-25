@@ -1,0 +1,8 @@
+
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "wowseru-ai-animasi-mcp",
+  "main": "server.js",
+  "compatibility_date": "2026-10-25",
+  "compatibility_flags": ["nodejs_compat"]
+}
