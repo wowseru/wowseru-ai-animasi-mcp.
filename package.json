@@ -5,11 +5,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "express": "^4.21.2",
+    "@modelcontextprotocol/server": "^2.0.0",
+    "agents": "*",
     "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
   }
 }
