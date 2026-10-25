@@ -164,7 +164,9 @@ function createServer() {
   return server;
 }
 
-const mcpHandler = createMcpHandler(createServer);
+const mcpHandler = createMcpHandler(createServer, {
+  onerror: (error) => console.error("MCP ERROR:", error),
+});
 
 export default {
   async fetch(request, env, ctx) {
