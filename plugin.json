@@ -1,0 +1,103 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "wowseru-ai-animasi",
+  "version": "0.4.3",
+  "description": "WOWSERU AI ANIMASI membantu membuat konsep animasi, storyboard enam panel, prompt gambar, prompt video, narasi, dan arahan kontinuitas.",
+  "author": {
+    "name": "WOWSERU"
+  },
+  "homepage": "https://github.com/wowseru/wowseru-ai-animasi-mcp",
+  "repository": "https://github.com/wowseru/wowseru-ai-animasi-mcp",
+  "license": "MIT",
+  "keywords": [
+    "animation",
+    "storyboard",
+    "AI video",
+    "image prompts",
+    "video prompts"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "WOWSERU AI ANIMASI",
+        "shortDescription": "Storyboard & Prompt Animasi",
+        "longDescription": "WOWSERU AI ANIMASI membantu menyusun konsep cerita animasi, storyboard enam panel, prompt gambar dan video, narasi, timing, serta continuity lock. Mendukung berbagai gaya visual dan format video vertikal. Menghasilkan konsep dan prompt tekstual, bukan file video final.",
+        "developerName": "WOWSERU",
+        "category": "Creativity",
+        "capabilities": [
+          "Create animation concepts",
+          "Create storyboards",
+          "Write image prompts",
+          "Write video prompts"
+        ],
+        "websiteURL": "https://github.com/wowseru/wowseru-ai-animasi-mcp",
+        "supportURL": "https://github.com/wowseru/wowseru-ai-animasi-mcp/issues",
+        "privacyPolicyURL": "https://github.com/wowseru/wowseru-ai-animasi-mcp",
+        "termsOfServiceURL": "https://github.com/wowseru/wowseru-ai-animasi-mcp",
+        "defaultPrompt": [
+          "Mulai membuat konsep animasi baru.",
+          "Buat storyboard enam panel untuk scene animasi saya.",
+          "Buat prompt gambar dan video animasi vertikal 9:16."
+        ]
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Menampilkan panduan awal",
+              "prompt": "Mulai",
+              "tools_triggered": "Tidak ada",
+              "expected_behavior": "Menampilkan enam jenis animasi, pilihan gaya visual, tautan gaya lainnya, dan template brief tanpa memanggil tool."
+            },
+            {
+              "description": "Membuat konsep awal",
+              "prompt": "Buat konsep animasi promosi kopi berdurasi 30 detik dengan tiga scene.",
+              "tools_triggered": "Tidak ada pada tahap konsep awal",
+              "expected_behavior": "Merangkum brief, mengusulkan alur tiga scene, dan meminta persetujuan sebelum produksi."
+            },
+            {
+              "description": "Mencatat persetujuan konsep",
+              "prompt": "Konsepnya cocok, lanjut.",
+              "tools_triggered": "confirm_animation_brief",
+              "expected_behavior": "Mencatat persetujuan jika feedback positif dan mengembalikan approval_id."
+            },
+            {
+              "description": "Membuat storyboard",
+              "prompt": "Buat storyboard enam panel 2x3 untuk scene pertama berdasarkan konsep yang sudah disetujui.",
+              "tools_triggered": "create_storyboard",
+              "expected_behavior": "Menghasilkan prompt storyboard enam panel dengan arahan kamera, aksi, dan kontinuitas setelah persetujuan produksi terpenuhi."
+            },
+            {
+              "description": "Membuat prompt animasi",
+              "prompt": "Buat prompt gambar dan video untuk scene pertama, rasio 9:16, durasi lima detik.",
+              "tools_triggered": "generate_animation_prompts",
+              "expected_behavior": "Menghasilkan prompt gambar dan video berbahasa Inggris, timing, continuity lock, dan negative prompt setelah persetujuan produksi terpenuhi."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Feedback negatif tidak dianggap sebagai persetujuan",
+              "prompt": "Konsepnya kurang cocok, coba ide lain.",
+              "expected_behavior": "Tidak mencatat persetujuan. Menawarkan revisi atau alternatif konsep dan tidak memulai produksi."
+            },
+            {
+              "description": "Produksi tanpa persetujuan",
+              "prompt": "Langsung buat storyboard tanpa persetujuan konsep dan produksi.",
+              "expected_behavior": "Tool storyboard menolak permintaan karena persetujuan yang diwajibkan belum terpenuhi."
+            },
+            {
+              "description": "Approval ID tidak valid",
+              "prompt": "Buat prompt video menggunakan approval_id yang tidak valid.",
+              "expected_behavior": "Tool menolak produksi karena approval_id tidak valid atau persetujuan produksi belum tersedia."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "Plugin ini tidak menjual produk, memproses pembayaran, atau melakukan transaksi."
+      },
+      "publication": {
+        "release_notes": "WOWSERU AI ANIMASI v0.4.3: menambahkan metadata review, lima positive test cases, tiga negative test cases, dan catatan publikasi untuk pengajuan plugin MCP."
+      }
+    }
+  }
+}
