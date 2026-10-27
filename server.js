@@ -176,6 +176,11 @@ Jaga kontinuitas antarscene.
     {
       description:
         "Catat persetujuan konsep terbaru setelah feedback positif yang jelas.",
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
       inputSchema: {
         brief: z.string().min(1),
         confirmation_text: z.string().min(1),
@@ -207,6 +212,11 @@ Jaga kontinuitas antarscene.
     {
       description:
         "Catat persetujuan produksi berdasarkan feedback positif yang sama.",
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
       inputSchema: {
         approval_id: z.string().uuid(),
         confirmation_text: z.string().min(1),
@@ -235,6 +245,11 @@ Jaga kontinuitas antarscene.
     {
       description:
         "Membuat paket konsep setelah dua tahap persetujuan terpenuhi.",
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
       inputSchema: {
         brief: z.string().min(1),
         approval_id: z.string().uuid(),
@@ -330,6 +345,11 @@ Jaga kontinuitas antarscene.
     {
       description:
         "Membuat storyboard enam panel untuk satu scene setelah persetujuan.",
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
       inputSchema: {
         concept: z.string().min(1),
         approval_id: z.string().uuid(),
@@ -403,6 +423,11 @@ NEGATIVE CONSTRAINTS: no identity drift, deformation, duplicate subjects, changi
     {
       description:
         "Membuat prompt gambar dan video berbahasa Inggris dengan timing dan continuity lock.",
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        openWorldHint: false,
+      },
       inputSchema: {
         scene: z.string().min(1),
         approval_id: z.string().uuid(),
