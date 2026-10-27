@@ -3,7 +3,6 @@ import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
 
 // WOWSERU AI ANIMASI v0.3.2
-// Approval disimpan dalam memori dan tidak permanen.
 const approvals = new Map();
 const APPROVAL_TTL_MS = 2 * 60 * 60 * 1000;
 
@@ -36,27 +35,13 @@ function isPositiveFeedback(text) {
   if (!normalized) return false;
 
   const negativePhrases = [
-    "kurang cocok",
-    "belum cocok",
-    "tidak cocok",
-    "nggak cocok",
-    "gak cocok",
-    "kurang bagus",
-    "belum bagus",
-    "kurang menarik",
-    "tidak suka",
-    "nggak suka",
-    "gak suka",
-    "kurang pas",
-    "belum pas",
-    "coba ide lain",
-    "coba alternatif",
-    "ganti ",
-    "ubah ",
-    "revisi",
-    "tapi ending",
-    "tapi bagian",
-    "tapi ganti",
+    "kurang cocok", "belum cocok", "tidak cocok",
+    "nggak cocok", "gak cocok", "kurang bagus",
+    "belum bagus", "kurang menarik", "tidak suka",
+    "nggak suka", "gak suka", "kurang pas",
+    "belum pas", "coba ide lain", "coba alternatif",
+    "ganti ", "ubah ", "revisi", "tapi ending",
+    "tapi bagian", "tapi ganti",
   ];
 
   if (
@@ -67,29 +52,12 @@ function isPositiveFeedback(text) {
   }
 
   const positivePhrases = [
-    "ok",
-    "oke",
-    "cocok",
-    "bagus",
-    "mantap",
-    "keren",
-    "setuju",
-    "deal",
-    "gas",
-    "gaskeun",
-    "lanjut",
-    "lanjutkan",
-    "sip",
-    "mantul",
-    "boleh",
-    "suka",
-    "aku suka",
-    "saya suka",
-    "gue suka",
-    "ini yang saya mau",
-    "ini yang aku mau",
-    "pas banget",
-    "bagus banget",
+    "ok", "oke", "cocok", "bagus", "mantap", "keren",
+    "setuju", "deal", "gas", "gaskeun", "lanjut",
+    "lanjutkan", "sip", "mantul", "boleh", "suka",
+    "aku suka", "saya suka", "gue suka",
+    "ini yang saya mau", "ini yang aku mau",
+    "pas banget", "bagus banget",
   ];
 
   return positivePhrases.some(
@@ -107,12 +75,12 @@ function makeServer() {
 ## IDENTITAS
 - Nama: WOWSERU AI ANIMASI
 - Bahasa default: Bahasa Indonesia.
-- Output utama: konsep cerita, storyboard, dan prompt gambar/video.
+- Output: konsep cerita, storyboard, prompt gambar/video.
 - Jangan mengklaim telah merender video atau gambar final.
 
 ## PEMBUKA
-Jika pengguna mengetik "Mulai", tampilkan pesan teks biasa berikut.
-Jangan memanggil tool apa pun pada tahap pembuka.
+Jika pengguna mengetik "Mulai", tampilkan pesan teks biasa.
+Jangan memanggil tool pada tahap pembuka.
 
 🎬 Selamat datang di WOWSERU AI ANIMASI!
 
@@ -133,7 +101,6 @@ Cinematic Action Movie Still Style / Studio Ghibli /
 Donghua (Chinese Animation) / Claymation / 2.5D Style / Webtoon Style
 
 🎨 GAYA ANIMASI LAINNYA
-
 [Lihat pilihan gaya animasi lainnya](https://wic-ai-video.hai-epple.chatgpt.site?utm_source=chatgpt.com)
 
 Sebelum bikin Video AI, isi format di bawah ini dulu ya 👇🏻
@@ -157,109 +124,80 @@ Sebelum bikin Video AI, isi format di bawah ini dulu ya 👇🏻
 • Ide Cerita Scene 2:
 • Ide Cerita Scene 3:
 
-Detail produk dapat mencakup fitur, bahan, ukuran, fungsi,
-keunggulan, masalah target audiens, dan informasi relevan lainnya.
-
 ## SETELAH BRIEF DIKIRIM
-- Jangan tampilkan ulang template kosong jika pengguna sudah
-  mengirim informasi produk atau cerita.
-- Pertahankan seluruh pilihan yang telah diberikan pengguna.
-- Rangkum brief dan rekomendasikan alur scene sesuai durasi.
-- Setiap scene harus memiliki judul, aksi, dialog bila relevan,
-  serta transisi ke scene berikutnya.
-- Jangan mengarang USP atau klaim produk yang belum diberikan.
-- Akhiri dengan meminta pengguna menilai konsep.
-- Jangan memanggil tool storyboard atau produksi saat tahap ini.
+- Jangan tampilkan template kosong jika informasi sudah diberikan.
+- Pertahankan pilihan pengguna.
+- Rangkum brief dan rekomendasikan alur scene.
+- Setiap scene punya judul, aksi, dialog bila relevan, dan transisi.
+- Jangan mengarang klaim produk.
+- Minta pengguna menilai konsep.
+- Jangan membuat storyboard atau produksi sebelum konsep disetujui.
 
-## FEEDBACK PENGGUNA
-Pahami maksud kalimat berdasarkan konteks, bukan kata kunci saja.
-
-Jika pengguna tidak puas, misalnya "kurang cocok", "kurang bagus",
-"jelek", "kurang menarik", "belum pas", atau meminta ide lain:
-- Jika meminta alternatif, berikan 5 konsep berbeda.
-- Jika meminta revisi spesifik, ubah bagian tersebut saja.
+## FEEDBACK
+- Jika tidak puas, tawarkan 5 konsep berbeda jika diminta alternatif.
+- Jika revisi spesifik diminta, revisi bagian itu saja.
 - Jangan membuat prompt produksi sebelum konsep revisi disetujui.
-
-Jika pengguna menyetujui, misalnya "cocok", "bagus", "mantap",
-"keren", "oke", "setuju", "gas", atau "lanjut":
-- Pastikan persetujuan itu merujuk pada konsep terbaru.
-- Jika jelas, lanjutkan ke paket produksi tanpa meminta brief diulang.
-- Jika pujian disertai permintaan revisi, revisi dahulu dan tunggu
-  persetujuan atas hasil revisi.
+- Jika pengguna menyetujui konsep terbaru, lanjutkan tanpa meminta brief diulang.
+- Jika pujian disertai permintaan revisi, revisi dahulu.
 
 ## PAKET PRODUKSI
-Setelah persetujuan yang diperlukan terpenuhi, buat:
+Setelah persetujuan terpenuhi, buat:
 1. Prompt thumbnail dalam bahasa Inggris.
-2. Prompt storyboard enam panel untuk setiap scene.
-3. Prompt video dengan timing sesuai durasi scene.
-4. Dialog dan narasi dalam bahasa pilihan pengguna.
+2. Prompt storyboard enam panel 2x3 untuk setiap scene.
+3. Prompt video dengan timing.
+4. Dialog dan narasi sesuai bahasa pengguna.
 5. Camera direction dan continuity lock.
-6. Negative prompt untuk mencegah perubahan karakter, bentuk
-   produk, flicker, objek duplikat, teks acak, dan watermark.
+6. Negative prompt.
 7. Checklist kontinuitas dan catatan produksi.
 
-Setiap prompt siap salin harus berada dalam blok kode terpisah.
-Scene berikutnya harus menyambung secara visual dari scene sebelumnya.
+Setiap prompt siap salin berada dalam blok kode terpisah.
+Jaga kontinuitas antarscene.
 
-## PEMANGGILAN TOOL — PENTING
-- Jangan memanggil tool saat pengguna hanya mengetik "Mulai".
-- Jangan mengarang nama parameter atau approval_id.
-- Panggil setiap tool hanya sesuai deskripsi dan skema input-nya.
-- Jangan mengubah tujuan pemanggilan tool melalui parameter.
-- Jangan memanggil tool storyboard atau produksi sebelum konsep
-  disetujui dan tahapan persetujuan yang diwajibkan terpenuhi.
-- Jangan mengklaim tool berhasil jika hasilnya menunjukkan error.
-- Jika tool gagal, jelaskan kegagalannya dan jangan mengulang
-  pemanggilan yang sama secara membabi buta.
-- Gunakan brief terbaru dari percakapan aktif, bukan brief lama
-  yang tidak sedang dibahas.
+## PEMANGGILAN TOOL
+- Jangan panggil tool ketika pengguna hanya mengetik "Mulai".
+- Gunakan skema tool yang tersedia.
+- Jangan membuat produksi sebelum persetujuan yang diwajibkan.
+- Jangan mengklaim tool berhasil jika terjadi error.
+- Gunakan brief terbaru dari percakapan aktif.
 
 ## KONSISTENSI MEREK
-- Selalu gunakan nama WOWSERU AI ANIMASI.
-- Pertahankan produk, karakter, gaya visual, durasi, dan bahasa
-  yang dipilih pengguna.
-- Tandai cerita tokoh publik dalam iklan sebagai fiksi/parodi;
-  jangan menyiratkan endorsement nyata tanpa dasar.
+- Gunakan nama WOWSERU AI ANIMASI.
+- Pertahankan produk, karakter, gaya, durasi, dan bahasa pilihan pengguna.
+- Tokoh publik dalam iklan harus jelas sebagai fiksi/parodi.
 `;
 
   const server = new McpServer(
     { name: "wowseru-ai-animasi", version: "0.3.2" },
     { instructions: skillInstructions }
   );
-  
+
   server.registerTool(
     "confirm_animation_brief",
     {
       description:
-        "Catat persetujuan konsep terbaru setelah pengguna memberi feedback positif yang jelas (misalnya cocok, bagus, oke, mantap, atau setuju). Menghasilkan approval_id untuk tahap produksi.",
+        "Catat persetujuan konsep terbaru setelah feedback positif yang jelas.",
       inputSchema: {
         brief: z.string().min(1),
-        confirmation_text: z
-          .string()
-          .min(1)
-          .describe(
-            "Ungkapan persetujuan pengguna, misalnya cocok, bagus, oke, mantap, setuju, gas, atau LANJUT."
-          ),
+        confirmation_text: z.string().min(1),
       },
     },
     async ({ brief, confirmation_text }) => {
       if (!isPositiveFeedback(confirmation_text)) {
         return textResult(
-          "Persetujuan belum tercatat. Feedback belum menunjukkan persetujuan yang jelas terhadap konsep terbaru.",
+          "Persetujuan belum tercatat. Feedback belum menunjukkan persetujuan yang jelas.",
           true
         );
       }
 
       const approval_id = crypto.randomUUID();
-
       approvals.set(approval_id, {
         brief: brief.trim(),
         approvedAt: Date.now(),
       });
 
       return textResult(
-        `Konsep disetujui dan dicatat. approval_id: ${approval_id}. ` +
-          "Lanjutkan ke tahap produksi dengan memanggil confirm_animation_lanjut menggunakan persetujuan yang sama; jangan meminta pengguna mengetik LANJUT lagi."
+        `Konsep disetujui. approval_id: ${approval_id}. ` +
+        "Lanjutkan dengan confirm_animation_lanjut menggunakan persetujuan yang sama."
       );
     }
   );
@@ -268,15 +206,10 @@ Scene berikutnya harus menyambung secara visual dari scene sebelumnya.
     "confirm_animation_lanjut",
     {
       description:
-        "Catat persetujuan untuk mulai produksi berdasarkan feedback positif yang sama, tanpa meminta pengguna mengulang kata LANJUT.",
+        "Catat persetujuan produksi berdasarkan feedback positif yang sama.",
       inputSchema: {
         approval_id: z.string().uuid(),
-        confirmation_text: z
-          .string()
-          .min(1)
-          .describe(
-            "Ungkapan persetujuan/lanjut pengguna yang jelas, misalnya cocok, oke, bagus, mantap, gas, setuju, atau LANJUT."
-          ),
+        confirmation_text: z.string().min(1),
       },
     },
     async ({ approval_id, confirmation_text }) => {
@@ -284,7 +217,7 @@ Scene berikutnya harus menyambung secara visual dari scene sebelumnya.
 
       if (!state || !isPositiveFeedback(confirmation_text)) {
         return textResult(
-          "Persetujuan produksi belum tercatat. Pastikan feedback pengguna jelas menyetujui konsep terbaru dan approval_id masih berlaku.",
+          "Persetujuan produksi belum tercatat. Periksa approval_id dan feedback.",
           true
         );
       }
@@ -292,8 +225,7 @@ Scene berikutnya harus menyambung secara visual dari scene sebelumnya.
       state.lanjutAt = Date.now();
 
       return textResult(
-        `Persetujuan produksi tercatat. approval_id: ${approval_id}. ` +
-          "Tool produksi sekarang dapat dipanggil untuk brief dan konsep yang sama."
+        `Persetujuan produksi tercatat. approval_id: ${approval_id}.`
       );
     }
   );
@@ -302,7 +234,7 @@ Scene berikutnya harus menyambung secara visual dari scene sebelumnya.
     "create_animation_concept",
     {
       description:
-        "Membuat ringkasan produksi setelah pengguna menyetujui konsep terbaru; gunakan brief yang sama persis dan approval_id yang telah disetujui.",
+        "Membuat paket konsep setelah dua tahap persetujuan terpenuhi.",
       inputSchema: {
         brief: z.string().min(1),
         approval_id: z.string().uuid(),
@@ -327,14 +259,14 @@ Scene berikutnya harus menyambung secara visual dari scene sebelumnya.
 
       if (!approval?.lanjutAt) {
         return textResult(
-          "Produksi ditolak: tahap OK dan LANJUT belum tercatat untuk approval_id ini.",
+          "Produksi ditolak: persetujuan konsep dan produksi belum lengkap.",
           true
         );
       }
 
       if (a.brief.trim() !== approval.brief) {
         return textResult(
-          "Produksi ditolak: brief tidak sama dengan brief yang disetujui. Minta persetujuan ulang untuk brief terbaru.",
+          "Produksi ditolak: brief berbeda dari brief yang disetujui.",
           true
         );
       }
@@ -348,72 +280,48 @@ Scene berikutnya harus menyambung secara visual dari scene sebelumnya.
         const end = start + seconds;
         const idea = a.scene_ideas?.[i] || a.brief;
 
-        const phase =
-          i === 0
-            ? "Establish the visual hook and subject clearly"
-            : i === a.scene_count - 1
-              ? "Resolve the story and end with a memorable final frame"
-              : "Develop the action while preserving continuity";
-
         return [
           `SCENE ${i + 1}`,
           `Timing: ${start}-${end}s (${seconds}s)`,
-          `Tujuan: ${phase}.`,
           `Ide/aksi: ${idea}`,
-          `Transisi: ${
-            i === 0
-              ? "Open clearly and establish geography"
-              : "Continue from the prior scene's final pose, screen direction, lighting, and object placement"
-          }.`,
-          "Continuity lock: preserve identity, silhouette, colors, proportions, accessories, product details, environment direction, and lighting.",
-          `Prompt gambar (English): Create a polished ${a.style} storyboard image, aspect ratio ${a.resolution}. Story concept: ${idea}. Subject/product lock: ${a.brand_product || "subject in approved brief"}. Visual continuity: ${a.visual_style || a.style}; clear focal point, motivated camera, coherent perspective. Negative constraints: no identity drift, deformation, random text, fake logos, watermark, unsupported claims.`,
-          `Prompt video (English): Animate this scene for ${seconds} seconds. Action: ${idea}. Camera: smooth motivated movement, stable horizon, clear subject. Preserve exact identity, palette, proportions, materials, accessories, lighting and screen direction. No flicker, teleporting, unexplained object changes, random text, watermark, or unsupported claims.`,
-          `Narasi: ${
-            a.narration ||
-            "Susun narasi sesuai brief dan bahasa yang diminta; jangan menambahkan klaim yang tidak didukung."
-          }`,
+          "Continuity lock: preserve identity, silhouette, colors, proportions, accessories, lighting, and object placement.",
+          `Prompt gambar (English): Create a polished ${a.style} storyboard image, aspect ratio ${a.resolution}. Story concept: ${idea}. Subject/product: ${a.brand_product || "subject in approved brief"}. Visual style: ${a.visual_style || a.style}. No identity drift, deformation, random text, fake logos, watermark, or unsupported claims.`,
+          `Prompt video (English): Animate this scene for ${seconds} seconds. Action: ${idea}. Use smooth motivated camera movement and preserve identity, proportions, colors, materials, accessories, lighting, and screen direction. No flicker, teleporting, random text, watermark, or unsupported claims.`,
+          `Narasi: ${a.narration || "Susun narasi sesuai brief dan bahasa yang diminta."}`,
         ].join("\n");
       });
 
-      const thumbnail = `Create a polished ${a.style} key visual for a ${a.resolution} AI animation. Subject/brand: ${a.brand_product || "the subject specified in the approved brief"}. Brief: ${a.brief}. Product details: ${a.product_details || "not provided; do not invent product claims"}. Audience: ${a.audience || "general audience"}. Strong readable focal point, cinematic composition, controlled lighting, clean background, no tiny generated text, no watermark, no invented logo or unsupported claim.`;
+      const thumbnail = `Create a polished ${a.style} key visual for a ${a.resolution} AI animation. Subject/brand: ${a.brand_product || "subject specified in approved brief"}. Brief: ${a.brief}. Product details: ${a.product_details || "not provided; do not invent product claims"}. Audience: ${a.audience || "general audience"}. Strong focal point, cinematic composition, controlled lighting, no tiny generated text, no watermark, no invented logo or unsupported claim.`;
 
-      return textResult(
-        [
-          "KONSEP ANIMASI WOWSERU AI v0.3.2",
-          `Produk/brand: ${a.brand_product || "Belum ditentukan"}`,
-          `Brief disetujui: ${a.brief}`,
-          `Detail produk/USP: ${
-            a.product_details || "Belum diberikan; jangan mengarang klaim produk."
-          }`,
-          `Target audiens: ${a.audience || "Umum"}`,
-          `Style: ${a.style}`,
-          `Gaya visual: ${a.visual_style || a.style}`,
-          `Durasi: ${a.duration_seconds} detik`,
-          `Resolusi: ${a.resolution}`,
-          `Jumlah scene: ${a.scene_count}`,
-          `Bahasa: ${a.language}`,
-          `Mode: ${a.mode}`,
-          "",
-          "KONSEP UTAMA DAN HOOK",
-          `Hook: buka dengan visual yang paling jelas dan relevan dengan brief: ${a.brief}.`,
-          "Pesan utama: satu ide utama, tanpa klaim yang tidak didukung.",
-          "",
-          "PROMPT THUMBNAIL (ENGLISH — READY TO COPY)",
-          "```text",
-          thumbnail,
-          "```",
-          "",
-          "RANGKAIAN SCENE",
-          ...scenes,
-          "",
-          "CONTINUITY CHECKLIST",
-          "- Pertahankan bentuk, warna, proporsi, kemasan, label, logo, aksesori, dan detail yang diberikan.",
-          "- Jaga konsistensi karakter, posisi objek, arah gerak, pencahayaan, lokasi, dan orientasi kamera.",
-          "- Jangan mengarang USP, bahan, harga, testimoni, garansi, promo, atau tautan pembelian.",
-          `Link produk/konten: ${a.product_link || "Tidak diberikan"}`,
-          "Catatan: ini konsep dan prompt tekstual, bukan video hasil render.",
-        ].join("\n")
-      );
+      return textResult([
+        "KONSEP ANIMASI WOWSERU AI",
+        `Produk/brand: ${a.brand_product || "Belum ditentukan"}`,
+        `Brief disetujui: ${a.brief}`,
+        `Detail produk/USP: ${a.product_details || "Belum diberikan"}`,
+        `Target audiens: ${a.audience || "Umum"}`,
+        `Style: ${a.style}`,
+        `Gaya visual: ${a.visual_style || a.style}`,
+        `Durasi: ${a.duration_seconds} detik`,
+        `Resolusi: ${a.resolution}`,
+        `Jumlah scene: ${a.scene_count}`,
+        `Bahasa: ${a.language}`,
+        `Mode: ${a.mode}`,
+        "",
+        "PROMPT THUMBNAIL (ENGLISH)",
+        "```text",
+        thumbnail,
+        "```",
+        "",
+        "RANGKAIAN SCENE",
+        ...scenes,
+        "",
+        "CONTINUITY CHECKLIST",
+        "- Pertahankan bentuk, warna, proporsi, kemasan, label, logo, dan aksesori sesuai brief.",
+        "- Jaga konsistensi karakter, posisi objek, arah gerak, pencahayaan, dan lokasi.",
+        "- Jangan mengarang klaim produk.",
+        `Link produk/konten: ${a.product_link || "Tidak diberikan"}`,
+        "Output berupa konsep dan prompt tekstual, bukan video hasil render.",
+      ].join("\n"));
     }
   );
 
@@ -421,7 +329,7 @@ Scene berikutnya harus menyambung secara visual dari scene sebelumnya.
     "create_storyboard",
     {
       description:
-        "Membuat storyboard enam panel untuk satu scene setelah pengguna menyetujui konsep.",
+        "Membuat storyboard enam panel untuk satu scene setelah persetujuan.",
       inputSchema: {
         concept: z.string().min(1),
         approval_id: z.string().uuid(),
@@ -439,92 +347,54 @@ Scene berikutnya harus menyambung secara visual dari scene sebelumnya.
 
       if (!approval?.lanjutAt) {
         return textResult(
-          "Storyboard ditolak: tahap OK dan LANJUT belum tercatat untuk approval_id ini.",
+          "Storyboard ditolak: persetujuan konsep dan produksi belum lengkap.",
           true
         );
       }
 
-      const subject =
-        a.character || "the main subject described in the approved brief";
-
+      const subject = a.character || "the main subject described in the brief";
       const panels = [
-        [
-          "Wide establishing shot",
-          "Show the environment and establish light direction and key props",
-          "Slow push-in from a stable wide frame",
-        ],
-        [
-          "Medium hero shot",
-          "Reveal defining silhouette, materials, colors and shape",
-          "Gentle lateral slide; keep the subject readable",
-        ],
-        [
-          "Medium close-up",
-          `Show the primary action: ${a.concept}`,
-          "Smooth motivated tracking movement",
-        ],
-        [
-          "Close-up detail",
-          "Show a relevant detail or reaction without inventing features",
-          "Subtle rack focus while preserving object position",
-        ],
-        [
-          "Hero close-up",
-          "Deliver the most memorable visual beat with a clean silhouette",
-          "Controlled short push-in, then hold",
-        ],
-        [
-          "Composed end frame",
-          "Resolve the action and hold a clean frame for transition",
-          "Ease to a stable hold",
-        ],
+        ["Wide establishing shot", "Establish environment and light direction", "Slow push-in"],
+        ["Medium hero shot", "Reveal defining silhouette, materials, colors, and shape", "Gentle lateral slide"],
+        ["Medium close-up", `Show the primary action: ${a.concept}`, "Smooth tracking movement"],
+        ["Close-up detail", "Show a relevant detail or reaction", "Subtle rack focus"],
+        ["Hero close-up", "Deliver the memorable visual beat", "Controlled short push-in"],
+        ["Composed end frame", "Resolve action and hold for transition", "Ease to a stable hold"],
       ];
 
       const panelSeconds = a.scene_duration_seconds / 6;
-
-      const panelDirections = panels
-        .map((p, i) => {
-          const from = (panelSeconds * i).toFixed(1);
-          const to = (panelSeconds * (i + 1)).toFixed(1);
-
-          return `PANEL ${i + 1} (${from}-${to} seconds): SHOT: ${p[0]}. ACTION: ${p[1]}. CAMERA: ${p[2]}.`;
-        })
-        .join("\n");
+      const panelDirections = panels.map((p, i) => {
+        const from = (panelSeconds * i).toFixed(1);
+        const to = (panelSeconds * (i + 1)).toFixed(1);
+        return `PANEL ${i + 1} (${from}-${to}s): SHOT: ${p[0]}. ACTION: ${p[1]}. CAMERA: ${p[2]}.`;
+      }).join("\n");
 
       const storyboardPrompt = `Create a polished 2x3 storyboard grid with six connected panels for Scene ${a.scene_number} of a ${a.style} animation, aspect ratio ${a.aspect_ratio}.
 STORY CONCEPT: ${a.concept}.
-CONTINUITY LOCK: preserve the same subject identity, silhouette, colors, proportions, materials, accessories, environment layout, lighting direction, screen direction, scale, and object placement across all six panels.
-CONSISTENT TALENT / CHARACTER: ${subject}. Keep the same face, clothing, hairstyle, body proportions, and expression style throughout.
-PRODUCT / OBJECT CONSISTENCY: show only product details supplied in the brief; do not invent labels, logos, materials, or claims. Preserve the same shape and placement of any eyes or mouth on a talking object.
-VISUAL CONTINUITY: use motivated camera angles and coherent perspective; each panel must progress naturally from the prior panel. The final panel must create a natural bridge into the next scene.
+CONSISTENT CHARACTER: ${subject}. Keep the same identity, clothing, colors, proportions, materials, accessories, and expression style.
+PRODUCT CONSISTENCY: show only product details supplied in the brief; do not invent labels, logos, materials, or claims.
+VISUAL CONTINUITY: coherent perspective, lighting direction, screen direction, scale, and object placement. The final panel bridges naturally into the next scene.
 ${panelDirections}
-IMPORTANT / NEGATIVE CONSTRAINTS: no identity drift, deformation, duplicate subjects, changing clothing or product shape, extra parts, flicker, random text, fake logos, watermark, unsupported claims, or unexplained scene changes.`;
+NEGATIVE CONSTRAINTS: no identity drift, deformation, duplicate subjects, changing product shape, extra parts, flicker, random text, fake logos, watermark, or unsupported claims.`;
 
-      return textResult(
-        [
-          `STORYBOARD — SCENE ${a.scene_number}`,
-          `Konsep: ${a.concept}`,
-          `Style: ${a.style}`,
-          `Karakter/objek: ${subject}`,
-          `Durasi: ${a.scene_duration_seconds} detik`,
-          `Rasio: ${a.aspect_ratio}`,
-          "",
-          "PROMPT GAMBAR STORYBOARD (ENGLISH — READY TO COPY)",
-          "```text",
-          storyboardPrompt,
-          "```",
-          "",
-          "CATATAN ENAM PANEL",
-          ...panels.map(
-            (p, i) =>
-              `Panel ${i + 1}: ${p[0]} — ${p[1]}. Kamera: ${p[2]}.`
-          ),
-          "",
-          "CONTINUITY LOCK",
-          `Subject lock: ${subject}. Preserve identity, silhouette, colors, proportions, materials, accessories, lighting, environment layout, and screen direction.`,
-          "Output adalah prompt tekstual untuk membuat grid 2×3, bukan gambar yang sudah dirender. Tambahkan teks saat editing untuk menghindari teks acak.",
-        ].join("\n")
-      );
+      return textResult([
+        `STORYBOARD — SCENE ${a.scene_number}`,
+        `Konsep: ${a.concept}`,
+        `Style: ${a.style}`,
+        `Karakter/objek: ${subject}`,
+        `Durasi: ${a.scene_duration_seconds} detik`,
+        `Rasio: ${a.aspect_ratio}`,
+        "",
+        "PROMPT GAMBAR STORYBOARD (ENGLISH)",
+        "```text",
+        storyboardPrompt,
+        "```",
+        "",
+        "CATATAN ENAM PANEL",
+        ...panels.map((p, i) => `Panel ${i + 1}: ${p[0]} — ${p[1]}. Kamera: ${p[2]}.`),
+        "",
+        "Output adalah prompt tekstual untuk membuat grid 2x3, bukan gambar yang sudah dirender.",
+      ].join("\n"));
     }
   );
 
@@ -532,7 +402,7 @@ IMPORTANT / NEGATIVE CONSTRAINTS: no identity drift, deformation, duplicate subj
     "generate_animation_prompts",
     {
       description:
-        "Membuat prompt gambar dan video berbahasa Inggris dengan timing, continuity lock, karakter/produk konsisten, dan negative constraints setelah konsep disetujui.",
+        "Membuat prompt gambar dan video berbahasa Inggris dengan timing dan continuity lock.",
       inputSchema: {
         scene: z.string().min(1),
         approval_id: z.string().uuid(),
@@ -553,84 +423,72 @@ IMPORTANT / NEGATIVE CONSTRAINTS: no identity drift, deformation, duplicate subj
 
       if (!approval?.lanjutAt) {
         return textResult(
-          "Prompt produksi ditolak: tahap OK dan LANJUT belum tercatat untuk approval_id ini.",
+          "Prompt produksi ditolak: persetujuan konsep dan produksi belum lengkap.",
           true
         );
       }
 
       const duration = a.duration_seconds;
-      const subject =
-        a.character || "the main subject described in the scene";
-
-      const continuity =
-        a.continuity_notes ||
-        "Keep identity, silhouette, colors, proportions, labels, accessories, lighting direction, and spatial position consistent across frames and scenes.";
-
-      const negative =
-        a.negative_prompt ||
-        "No identity drift, product deformation, changing colors or labels, extra/missing parts, flicker, jitter, broken anatomy, random text, fake logos, watermark, unexplained object changes, or unsupported claims.";
+      const subject = a.character || "the main subject described in the scene";
+      const continuity = a.continuity_notes ||
+        "Keep identity, silhouette, colors, proportions, labels, accessories, lighting, and spatial position consistent.";
+      const negative = a.negative_prompt ||
+        "No identity drift, product deformation, changing colors or labels, extra parts, flicker, jitter, random text, fake logos, watermark, or unsupported claims.";
 
       const t1 = (duration * 0.25).toFixed(1);
       const t2 = (duration * 0.55).toFixed(1);
       const t3 = (duration * 0.8).toFixed(1);
 
       const timeline = [
-        `0.0-${t1}s: Establish subject and environment with a readable composition.`,
-        `${t1}-${t2}s: Execute the primary action smoothly with plausible weight and contact.`,
-        `${t2}-${t3}s: Show key detail or emotional beat while preserving identity.`,
-        `${t3}-${duration.toFixed(1)}s: Settle into a clean hero frame suitable for transition.`,
+        `0.0-${t1}s: Establish subject and environment clearly.`,
+        `${t1}-${t2}s: Execute the primary action smoothly.`,
+        `${t2}-${t3}s: Show the key detail or emotional beat.`,
+        `${t3}-${duration.toFixed(1)}s: Settle into a clean hero frame.`,
       ];
 
       const imagePrompt = `STORY CONCEPT: ${a.scene}
 CONTINUITY LOCK: ${continuity}
-CONSISTENT TALENT / CHARACTER: ${subject}; preserve identity, silhouette, proportions, colors, materials, and accessories.
-PRODUCT / OBJECT CONSISTENCY: show only details supplied in the brief; do not invent specifications, labels, logos, or claims.
-VISUAL CONTINUITY: ${a.camera_direction || "Clean cinematic composition and motivated camera angle."} Keep lighting direction, background geography, screen direction, and object placement coherent.
-STYLE: ${a.style}; portrait ${a.aspect_ratio}; polished composition, clear focal point.
-IMPORTANT / NEGATIVE CONSTRAINTS: ${negative}. No tiny generated text; add typography during editing.`;
+CHARACTER: ${subject}; preserve identity, silhouette, proportions, colors, materials, and accessories.
+STYLE: ${a.style}; portrait ${a.aspect_ratio}.
+CAMERA: ${a.camera_direction || "Clean cinematic composition and motivated camera angle."}
+NEGATIVE CONSTRAINTS: ${negative}`;
 
       const videoPrompt = `Animate this scene in ${a.style}, portrait ${a.aspect_ratio}, total duration ${duration} seconds.
 SCENE: ${a.scene}
-SUBJECT LOCK: ${subject}. Keep identity and defining features unchanged.
+SUBJECT LOCK: ${subject}.
 CONTINUITY LOCK: ${continuity}
-CAMERA DIRECTION: ${a.camera_direction || "Smooth motivated dolly-in, stable horizon and controlled focus."}
+CAMERA: ${a.camera_direction || "Smooth motivated dolly-in, stable horizon, controlled focus."}
 TIMED ACTION: ${timeline.join(" ")}
-MOTION QUALITY: coherent acceleration, natural contact and weight, no sudden teleporting or frame-to-frame shape changes.
-IMPORTANT / NEGATIVE CONSTRAINTS: ${negative}.`;
+NEGATIVE CONSTRAINTS: ${negative}`;
 
-      return textResult(
-        [
-          "WOWSERU AI ANIMASI — PRODUCTION PROMPTS",
-          `Scene ${a.scene_number}: ${a.scene}`,
-          `Style: ${a.style}`,
-          `Subject: ${subject}`,
-          `Aspect ratio: ${a.aspect_ratio}`,
-          `Duration: ${duration}s`,
-          "",
-          "IMAGE PROMPT (ENGLISH — READY TO COPY)",
-          "```text",
-          imagePrompt,
-          "```",
-          "",
-          "VIDEO PROMPT (ENGLISH — READY TO COPY)",
-          "```text",
-          videoPrompt,
-          "```",
-          "",
-          "TIMING BREAKDOWN",
-          ...timeline,
-          "",
-          "CONTINUITY CHECKLIST",
-          `- Subject: ${subject}.`,
-          `- Visual lock: ${continuity}.`,
-          `- Negative constraints: ${negative}`,
-          `- Narasi: ${
-            a.narration ||
-            "Belum diberikan; susun sesuai brief dan bahasa yang diminta."
-          }`,
-          "Catatan: tool ini menghasilkan prompt tekstual, bukan file gambar atau video final.",
-        ].join("\n")
-      );
+      return textResult([
+        "WOWSERU AI ANIMASI — PRODUCTION PROMPTS",
+        `Scene ${a.scene_number}: ${a.scene}`,
+        `Style: ${a.style}`,
+        `Subject: ${subject}`,
+        `Aspect ratio: ${a.aspect_ratio}`,
+        `Duration: ${duration}s`,
+        "",
+        "IMAGE PROMPT (ENGLISH)",
+        "```text",
+        imagePrompt,
+        "```",
+        "",
+        "VIDEO PROMPT (ENGLISH)",
+        "```text",
+        videoPrompt,
+        "```",
+        "",
+        "TIMING BREAKDOWN",
+        ...timeline,
+        "",
+        "CONTINUITY CHECKLIST",
+        `- Subject: ${subject}.`,
+        `- Visual lock: ${continuity}.`,
+        `- Negative constraints: ${negative}`,
+        `- Narasi: ${a.narration || "Susun sesuai brief dan bahasa yang diminta."}`,
+        "Output berupa prompt tekstual, bukan file gambar atau video final.",
+      ].join("\n"));
     }
   );
 
@@ -644,6 +502,15 @@ const handler = createMcpHandler(makeServer, {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    if (url.pathname === "/.well-known/openai-apps-challenge") {
+      return new Response("S3DiK60Ub74uyuvdHsOdOpiuaeHTMFSbdVtto4G1LbI", {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-store",
+        },
+      });
+    }
 
     if (url.pathname === "/") {
       return Response.json({
@@ -673,18 +540,3 @@ export default {
     return new Response("Not Found", { status: 404 });
   },
 };
-
-export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-
-    if (url.pathname === "/.well-known/openai-apps-challenge") {
-  return new Response("S3DiK60Ub74uyuvdHsOdOpiuaeHTMFSbdVtto4G1LbI", {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
-  });
-}
-
-
