@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
 
-// WOWSERU AI ANIMASI v0.3.2
+// WOWSERU AI ANIMASI v0.3.3
 const approvals = new Map();
 const APPROVAL_TTL_MS = 2 * 60 * 60 * 1000;
 
@@ -70,7 +70,7 @@ function isPositiveFeedback(text) {
 }
 
 function makeServer() {
-  const skillInstructions = `# WOWSERU AI ANIMASI v0.3.2
+  const skillInstructions = `# WOWSERU AI ANIMASI v0.3.3
 
 ## IDENTITAS
 - Nama: WOWSERU AI ANIMASI
@@ -167,15 +167,14 @@ Jaga kontinuitas antarscene.
 `;
 
   const server = new McpServer(
-    { name: "wowseru-ai-animasi", version: "0.3.2" },
+    { name: "wowseru-ai-animasi", version: "0.3.3" },
     { instructions: skillInstructions }
   );
 
   server.registerTool(
     "confirm_animation_brief",
     {
-      description:
-        "Catat persetujuan konsep terbaru setelah feedback positif yang jelas.",
+      description: "Catat persetujuan konsep setelah feedback positif.",
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -195,6 +194,7 @@ Jaga kontinuitas antarscene.
       }
 
       const approval_id = crypto.randomUUID();
+
       approvals.set(approval_id, {
         brief: brief.trim(),
         approvedAt: Date.now(),
@@ -210,8 +210,7 @@ Jaga kontinuitas antarscene.
   server.registerTool(
     "confirm_animation_lanjut",
     {
-      description:
-        "Catat persetujuan produksi berdasarkan feedback positif yang sama.",
+      description: "Catat persetujuan produksi berdasarkan persetujuan konsep.",
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -243,8 +242,7 @@ Jaga kontinuitas antarscene.
   server.registerTool(
     "create_animation_concept",
     {
-      description:
-        "Membuat paket konsep setelah dua tahap persetujuan terpenuhi.",
+      description: "Membuat paket konsep setelah dua tahap persetujuan.",
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -343,8 +341,7 @@ Jaga kontinuitas antarscene.
   server.registerTool(
     "create_storyboard",
     {
-      description:
-        "Membuat storyboard enam panel untuk satu scene setelah persetujuan.",
+      description: "Membuat storyboard enam panel untuk satu scene setelah persetujuan.",
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -421,8 +418,7 @@ NEGATIVE CONSTRAINTS: no identity drift, deformation, duplicate subjects, changi
   server.registerTool(
     "generate_animation_prompts",
     {
-      description:
-        "Membuat prompt gambar dan video berbahasa Inggris dengan timing dan continuity lock.",
+      description: "Membuat prompt gambar dan video berbahasa Inggris dengan timing dan continuity lock.",
       annotations: {
         readOnlyHint: true,
         destructiveHint: false,
@@ -540,7 +536,7 @@ export default {
     if (url.pathname === "/") {
       return Response.json({
         service: "wowseru-ai-animasi",
-        version: "0.3.2",
+        version: "0.3.3",
         status: "ready",
         endpoint: "/mcp",
         tools: 5,
@@ -550,7 +546,7 @@ export default {
     if (url.pathname === "/health") {
       return Response.json({
         service: "wowseru-ai-animasi",
-        version: "0.3.2",
+        version: "0.3.3",
         status: "ok",
         skill_loaded: true,
         mcp_endpoint: "/mcp",
