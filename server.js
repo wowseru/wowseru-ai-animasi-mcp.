@@ -673,3 +673,18 @@ export default {
     return new Response("Not Found", { status: 404 });
   },
 };
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/.well-known/openai-apps-challenge") {
+  return new Response("S3DiK60Ub74uyuvdHsOdOpiuaeHTMFSbdVtto4G1LbI", {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+
