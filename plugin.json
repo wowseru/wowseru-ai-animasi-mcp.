@@ -1,0 +1,106 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "wowseru-ai-animasi",
+  "version": "0.4.6",
+  "description": "WOWSERU AI ANIMASI membantu membuat konsep animasi, thumbnail, storyboard enam panel per scene, serta prompt video bertiming dengan kontinuitas visual.",
+  "author": {
+    "name": "WOWSERU"
+  },
+  "homepage": "https://ai.wowseru.com/",
+  "keywords": [
+    "WOWSERU",
+    "AI animation",
+    "storyboard",
+    "image prompt",
+    "video prompt",
+    "product animation",
+    "continuity"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "WOWSERU AI ANIMASI",
+        "shortDescription": "Storyboard & Prompt Animasi",
+        "longDescription": "Buat konsep animasi, prompt thumbnail, storyboard enam panel untuk setiap scene, dan prompt video bertiming. Isi brief, setujui dengan OK, lalu ketik LANJUT untuk menerima paket produksi lengkap. Output berupa konsep dan prompt tekstual, bukan file video hasil render.",
+        "developerName": "WOWSERU",
+        "category": "Creativity",
+        "capabilities": [
+          "Create animation concepts",
+          "Create storyboards",
+          "Write image and video prompts"
+        ],
+        "defaultPrompt": [
+          "Mulai"
+        ],
+        "logo": "./assets/logo.png",
+        "logoDark": "./assets/logo-dark.png",
+        "composerIcon": "./assets/icon.png",
+        "composerIconDark": "./assets/icon-dark.png",
+        "websiteURL": "https://ai.wowseru.com/",
+        "supportURL": "https://ai.wowseru.com/support/",
+        "privacyPolicyURL": "https://ai.wowseru.com/privacy-policy/",
+        "termsOfServiceURL": "https://ai.wowseru.com/terms/"
+      },
+      "onboardingSkill": "./skills/wowseru-ai-animasi/SKILL.md",
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Menampilkan pembuka dan form brief baku dalam keadaan kosong; tidak mengisi contoh produk, brand, nilai default, atau ide cerita.",
+              "prompt": "MULAI",
+              "tools_triggered": "Tidak ada",
+              "expected_behavior": "Menampilkan pembuka baku, pilihan STYLE dan GAYA ANIMASI, tautan https://ai.wowseru.com/, serta seluruh kolom template dalam keadaan kosong. Tidak menambahkan onboarding atau data produk contoh."
+            },
+            {
+              "description": "Menyusun konsep cerita dari brief animasi yang diberikan pengguna.",
+              "prompt": "Buat konsep video TikTok 30 detik, 3 scene, untuk produk donat. Style Animasi Animasi Objek Bicara (Realistis), Gaya Visual Realistic Cinematic, bahasa Indonesia. Scene 1 karakter menikmati donat, Scene 2 menawarkan donat, Scene 3 membeli donat.",
+              "tools_triggered": "create_animation_concept",
+              "expected_behavior": "Mengolah brief menjadi konsep cerita untuk setiap scene dan meminta persetujuan pengguna sebelum tahap produksi. Tidak membuat paket produksi lengkap sebelum persetujuan."
+            },
+            {
+              "description": "Mencatat persetujuan pengguna terhadap brief dan konsep.",
+              "prompt": "OK, konsep dan brief sudah sesuai.",
+              "tools_triggered": "confirm_animation_brief",
+              "expected_behavior": "Mencatat persetujuan konsep/brief terbaru dan mengembalikan status persetujuan serta approval_id yang dapat dipakai pada tahap berikutnya."
+            },
+            {
+              "description": "Mencatat persetujuan untuk memulai produksi.",
+              "prompt": "LANJUT",
+              "tools_triggered": "confirm_animation_lanjut",
+              "expected_behavior": "Memvalidasi approval_id dan persetujuan sebelumnya, lalu mencatat persetujuan produksi. Tidak mengizinkan produksi jika persetujuan sebelumnya tidak sah."
+            },
+            {
+              "description": "Membuat paket storyboard dan prompt video untuk semua scene setelah persetujuan.",
+              "prompt": "Buat paket produksi lengkap untuk brief yang sudah disetujui: thumbnail, storyboard enam panel 2x3 per scene, prompt video bertimeline dan narasi.",
+              "tools_triggered": "create_storyboard, generate_animation_prompts",
+              "expected_behavior": "Menghasilkan satu prompt thumbnail, satu prompt grid storyboard 2x3 enam panel, dan satu prompt video bertiming secara terpisah untuk setiap scene, lengkap dengan continuity lock, negative prompt, dan narasi sesuai brief. Scene berikutnya melanjutkan frame terakhir scene sebelumnya. Tidak membuat atau merender aset/video."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Jangan membuat paket produksi ketika brief belum lengkap.",
+              "prompt": "Buatkan storyboard dan prompt video sekarang. Saya belum mengisi nama produk, target audience, atau ide cerita.",
+              "expected_behavior": "Tidak membuat storyboard atau prompt produksi. Meminta informasi inti yang belum tersedia dan mempertahankan template brief baku."
+            },
+            {
+              "description": "Jangan melewati persetujuan konsep.",
+              "prompt": "Saya belum menyetujui konsep. Langsung buat semua storyboard dan prompt video.",
+              "expected_behavior": "Menolak melanjutkan ke produksi, menjelaskan bahwa konsep harus disetujui terlebih dahulu dengan OK, lalu menunggu persetujuan."
+            },
+            {
+              "description": "Jangan melanjutkan produksi dengan approval yang tidak valid atau kedaluwarsa.",
+              "prompt": "Gunakan approval_id yang tidak valid untuk membuat storyboard dan prompt video.",
+              "expected_behavior": "Tool menolak permintaan karena approval_id tidak valid atau persetujuan produksi belum tercatat. Tidak menghasilkan paket produksi."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "Plugin ini tidak menjual produk, memproses pembayaran, atau melakukan transaksi.",
+        "demo_recording_url": "https://www.youtube.com/watch?v=4m8VR_rFOeU"
+      },
+      "publication": {
+        "release_notes": "WOWSERU AI ANIMASI v0.4.6 — koreksi identitas pembuka dan tautan GAYA ANIMASI Lainnya; form brief dibiarkan kosong sampai pengguna mengisinya. Mempertahankan alur persetujuan OK dan LANJUT. Tahap LANJUT menghasilkan brief dan prompt tekstual saja; tidak menjalankan rendering atau koneksi generator eksternal. Menambahkan lima test case positif, tiga test case negatif, serta URL video walkthrough YouTube. Paket dirapikan menjadi satu format portable Agent Plugins agar metadata review terbaca tanpa manifest kompatibilitas yang ambigu."
+      }
+    }
+  }
+}

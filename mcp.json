@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "wowseru-ai-animasi": {
+      "type": "streamable-http",
+      "url": "https://wowseru-ai-animasi.infowowseru.workers.dev/mcp"
+    }
+  }
+}
