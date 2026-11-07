@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "wowseru-ai-animasi": {
+      "type": "http",
+      "url": "https://wowseru-ai-animasi.infowowseru.workers.dev/mcp"
+    }
+  }
+}

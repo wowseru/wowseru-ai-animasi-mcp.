@@ -1,0 +1,15 @@
+{
+  "name": "WOWSERU AI ANIMASI",
+  "slug": "wowseru-ai-animasi",
+  "version": "0.4.2",
+  "description": "Storyboard & Prompt Animasi",
+  "homepage": "https://ai.wowseru.com/",
+  "support_url": "https://ai.wowseru.com/support/",
+  "privacy_policy_url": "https://ai.wowseru.com/privacy-policy/",
+  "terms_of_service_url": "https://ai.wowseru.com/terms/",
+  "mcp": {
+    "transport": "streamable-http",
+    "url": "https://wowseru-ai-animasi.infowowseru.workers.dev/mcp"
+  },
+  "skills": ["skills/wowseru-ai-animasi/SKILL.md"]
+}

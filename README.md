@@ -1,33 +1,24 @@
-# WOWSERU AI ANIMASI MCP
+# WOWSERU AI ANIMASI
 
-Repository layout:
+Repository ini mempertahankan paket plugin lengkap dan menyertakan source MCP/Worker.
 
-- `worker/` — Cloudflare Worker MCP server source.
-- `plugin/` — plugin manifest and skill package.
+## Struktur
+- `plugin.json`, `.codex-plugin/`, `.claude-plugin/`, `.agent-plugin/`, `.mcp.json`, `app.json`: manifest/integrasi plugin dari paket v0.4.2.
+- `assets/`: seluruh logo dan ikon asli dari paket v0.4.2.
+- `skills/wowseru-ai-animasi/SKILL.md`: dokumen instruksi terbaru dari pengguna, termasuk koreksi judul List STYLE dan List GAYA.
+- `worker/`: adaptasi Cloudflare Worker v0.3.2.
+- `starter/`: starter MCP + Fastify TypeScript v0.3.2.
 
-## Cloudflare Worker
-
+## Menjalankan Worker
 ```bash
 cd worker
 npm install
-npm run dev
-npm run deploy
+npx wrangler dev
+```
+Deploy staging terlebih dahulu:
+```bash
+npx wrangler deploy
 ```
 
-Worker routes:
-- `/` service information
-- `/health` health check
-- `/mcp` MCP endpoint
-
-Approval state is designed to use a Durable Object binding named `APPROVALS`.
-
-## Important verification before production
-
-The Worker is assembled from the supplied v0.3.2 source and updated skill document. Before relying on it:
-1. Run `npm install` and validate dependency versions against the current Cloudflare Agents/MCP SDK.
-2. Run local integration tests for `confirm_animation_brief` → `confirm_animation_lanjut` → all three production tools.
-3. Confirm that the MCP runtime passes `extra.env` to tool callbacks as expected; if not, adapt handlers to the runtime's supported execution context API.
-4. Deploy to a staging Worker and verify persistence across separate requests/isolates.
-5. Only then deploy to the production Worker.
-
-The existing plugin manifest schema may require adjustments to match the target platform's current requirements.
+## Penting: status validasi
+Worker source yang disertakan masih berasal dari adaptasi v0.3.2. Status OK/LANJUT disimpan di `Map` dalam memori dan dapat hilang saat isolate berubah/restart. Ini belum merupakan penyimpanan persetujuan tahan lama. Sebelum produksi, implementasikan Durable Objects/KV sesuai desain yang diuji, lalu jalankan integration test untuk lima tool MCP. Jangan menganggap ZIP ini sudah di-deploy atau production-verified.

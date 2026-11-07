@@ -1,0 +1,45 @@
+{
+  "name": "wowseru-ai-animasi",
+  "version": "0.4.2",
+  "description": "Alur WOWSERU AI ANIMASI: pilih jenis dan gaya animasi, isi brief lengkap, konfirmasi OK, lalu LANJUT untuk menghasilkan konsep, storyboard, dan prompt video per scene.",
+  "author": {
+    "name": "WOWSERU"
+  },
+  "keywords": [
+    "WOWSERU",
+    "AI animation",
+    "storyboard",
+    "image prompt",
+    "video prompt",
+    "product animation",
+    "continuity"
+  ],
+  "skills": "./skills",
+  "interface": {
+    "displayName": "WOWSERU AI ANIMASI",
+    "shortDescription": "Storyboard & Prompt Animasi",
+    "longDescription": "Buat konsep animasi, prompt thumbnail, storyboard 6 panel per scene, dan prompt video bertiming. Pilih style animasi, isi brief, konfirmasi OK, lalu ketik LANJUT untuk produksi prompt.",
+    "developerName": "WOWSERU",
+    "category": "Creativity",
+    "capabilities": [
+      "Create animation concepts",
+      "Create storyboards",
+      "Write image and video prompts"
+    ],
+    "defaultPrompt": [
+      "Mulai"
+    ],
+    "logo": "./assets/logo.png",
+    "logoDark": "./assets/logo-dark.png",
+    "composerIcon": "./assets/icon.png",
+    "composerIconDark": "./assets/icon-dark.png",
+    "websiteURL": "https://ai.wowseru.com/",
+    "supportURL": "https://ai.wowseru.com/support/",
+    "privacyPolicyURL": "https://ai.wowseru.com/privacy-policy/",
+    "termsOfServiceURL": "https://ai.wowseru.com/terms/"
+  },
+  "homepage": "https://ai.wowseru.com/",
+  "publication": {
+    "release_notes": "Versi 0.4.2: menambahkan beragam manifest plugin, konfigurasi MCP HTTP, dan app.json untuk pengujian kompatibilitas format."
+  }
+}
