@@ -179,47 +179,49 @@ function makeServer(env) {
     description: "Membuat storyboard enam panel untuk satu scene setelah brief disetujui dengan OK dan pengguna mengetik LANJUT.",
     inputSchema: {
       concept: z.string().min(1), approval_id: z.string().uuid(), style: z.string().default("Animasi Objek Bicara (Realistis)"),
-      character: z.string().optional(), scene_number: z.number().int().positive().default(1),
-      scene_duration_seconds: z.number().positive().default(10), aspect_ratio: z.string().default("9:16"), language: z.string().optional(), narration: z.string().optional()
+      character: z.string().optional(), brand_product: z.string().optional(), product_details: z.string().optional(),
+      scene_idea: z.string().optional(), scene_number: z.number().int().positive().default(1),
+      scene_duration_seconds: z.number().positive().default(10), aspect_ratio: z.string().default("9:16"),
+      language: z.string().optional(), narration: z.string().optional(),
+      visual_style: z.string().optional(), audience: z.string().optional()
     }
   }, async (a) => {
     const approval = await getApproval(env, a.approval_id);
     if (!approval?.lanjutAt) return textResult("Storyboard ditolak: tahap OK dan LANJUT belum tercatat untuk approval_id ini.", true);
-    const subject = a.character || "the main subject described in the approved brief";
+    const subject = a.character || a.brand_product || "subject specified in the approved brief";
+    const idea = a.scene_idea || a.concept;
+    const productFacts = a.product_details || "Only use product details explicitly supplied in the brief.";
     const panels = [
-      ["ESTABLISHING SHOT", "Wide establishing shot", "Show the environment and place the subject clearly; establish light direction and key props.", "Slow push-in from a stable wide frame."],
-      ["SUBJECT INTRODUCTION", "Medium hero shot", "Reveal defining silhouette, material, color and shape supported by the brief.", "Gentle lateral slide; keep the subject readable."],
-      ["PRIMARY ACTION", "Medium close-up", `Show one clear action that develops this concept: ${a.concept}.`, "Smooth motivated tracking movement."],
-      ["DETAIL / RESPONSE", "Close-up detail shot", "Show a relevant detail or consequence; do not invent labels or features.", "Subtle rack focus; preserve object position."],
-      ["VISUAL PEAK", "Hero close-up", "Deliver the most memorable visual beat with a clean silhouette.", "Controlled short push-in, then hold."],
-      ["END FRAME / TRANSITION", "Composed end frame", "Resolve the action and hold a clean final frame for transition or editing text.", "Ease to a stable hold."]
+      ["ESTABLISHING SHOT", "Wide shot", `Show ${subject} clearly in a simple setting; establish the scene and lighting.`, "Slow push-in; stable horizon."],
+      ["SUBJECT INTRODUCTION", "Medium hero shot", `Reveal ${subject} as the main character; preserve its actual package shape, colors, label and proportions.`, "Gentle lateral slide; keep the front of the package readable."],
+      ["PRIMARY ACTION", "Medium close-up", `${subject} comes to life and raises/waves its small cartoon arms to greet the viewer; use a friendly expressive face without changing the package design.`, "Smooth motivated push-in synchronized with the greeting."],
+      ["DETAIL / RESPONSE", "Close-up", `Show the character's friendly facial expression and a small greeting gesture; do not invent product features or claims.`, "Subtle rack focus; preserve package identity."],
+      ["VISUAL PEAK", "Hero close-up", `${subject} completes its cheerful greeting with a memorable expressive pose.`, "Controlled short push-in, then hold."],
+      ["END FRAME / TRANSITION", "Composed end frame", `Return to a clean hero composition of ${subject}, facing the viewer, ready for an editor-added CTA.`, "Ease to a stable final hold."]
     ];
     const panelSecs = a.scene_duration_seconds / 6;
     const output = panels.map((p, i) => {
       const from = (panelSecs * i).toFixed(1), to = (panelSecs * (i + 1)).toFixed(1);
-      return `PANEL ${i + 1} — ${p[0]}\nTiming: ${from}-${to} seconds\nFraming: ${p[1]}\nAksi: ${p[2]}\nKamera: ${p[3]}`;
+      return `PANEL ${i + 1} — ${p[0]}\nTiming: ${from}-${to} seconds\nFraming: ${p[1]}\nAction: ${p[2]}\nCamera: ${p[3]}`;
     });
-    const gridPrompt = `Create a single storyboard sheet arranged in an exact 2-column by 3-row grid (2×3), containing exactly SIX clearly separated panels, read left-to-right then top-to-bottom. STYLE: ${a.style}. ASPECT RATIO: ${a.aspect_ratio}. SCENE CONCEPT: ${a.concept}. SUBJECT / CHARACTER LOCK: ${subject}. PANEL 1 — ESTABLISHING SHOT: wide shot introduces the environment, subject, light direction, and key props. PANEL 2 — SUBJECT INTRODUCTION: medium hero shot reveals the subject's defining silhouette, material, color, and shape. PANEL 3 — PRIMARY ACTION: medium close-up shows the main action: ${a.concept}. PANEL 4 — DETAIL / RESPONSE: close-up shows a relevant detail or consequence without inventing product features. PANEL 5 — VISUAL PEAK: memorable hero close-up with a clean silhouette and expressive action. PANEL 6 — END FRAME / TRANSITION: resolve the action into a composed final frame. Maintain strict continuity of identity, anatomy, silhouette, proportions, colors, materials, accessories, labels, environment layout, lighting direction, and screen direction across all six panels. Each panel must be visually distinct, sequential, and contained in its own grid cell. No extra panels, no missing panels, no panel collage outside the grid, no random text, no fake logos, no watermark, no deformation, and no unsupported claims.`;
+    const gridPrompt = `Create ONE complete storyboard sheet, exact 2 columns by 3 rows, exactly SIX separate panels, reading left-to-right then top-to-bottom. Do not create six separate images. STYLE: ${a.visual_style || a.style}. FORMAT: portrait ${a.aspect_ratio}. SUBJECT: ${subject}. PRODUCT FACTS: ${productFacts}. SCENE IDEA: ${idea}. PANEL 1: wide establishing shot of ${subject} in a clean simple setting. PANEL 2: medium hero shot clearly reveals the same package design, shape, colors and label. PANEL 3: the package becomes a cute 3D cartoon character and raises/waves its arms to greet the viewer. PANEL 4: close-up of its friendly expression and greeting gesture. PANEL 5: expressive cheerful hero pose. PANEL 6: clean final hero frame with the character facing the viewer. Keep the exact same package identity, proportions, colors, material, label and facial features in every panel. Each panel must occupy its own cell with clear gutters. No extra panels, no missing panels, no merged cells, no invented logos, no random lettering, no watermark, no product claims not present in the supplied facts. Audience: ${a.audience || "general audience"}.`;
+    const spoken = a.narration && !/^(ya|yes)$/i.test(a.narration.trim()) ? a.narration : `${subject}: "Hai! Senang berkenalan denganmu!"`;
     return textResult([
       `STORYBOARD — SCENE ${a.scene_number}`,
       `Konsep: ${a.concept}`,
-      `Style: ${a.style}`,
-      `Karakter/objek: ${subject}`,
+      `Ide scene: ${idea}`,
+      `Produk/karakter: ${subject}`,
+      `Detail produk: ${productFacts}`,
+      `Style: ${a.visual_style || a.style}`,
       `Durasi: ${a.scene_duration_seconds} detik`,
       `Rasio: ${a.aspect_ratio}`,
-      "",
-      "GRID STORYBOARD 2×3 — TEPAT ENAM PANEL",
-      ...output,
-      "",
-      "PROMPT GAMBAR STORYBOARD (ENGLISH — ONE COMPLETE 2×3 GRID)",
-      "```text",
-      gridPrompt,
-      "```",
-      "",
-      "CONTINUITY LOCK",
-      `Subject lock: ${subject}. Preserve silhouette, colors, proportions, materials, accessories, lighting, environment layout, and screen direction.`,
-      `Narasi/dialog (${a.language || "bahasa sesuai brief"}): ${a.narration || "Ikuti narasi yang telah ditentukan pada brief; jangan menambahkan klaim yang tidak didukung."}`,
-      "Catatan: prompt ini meminta satu lembar storyboard 2×3 berisi tepat enam panel; hasilnya tetap perlu dirender di generator gambar."
+      "", "ENAM PANEL STORYBOARD (2 KOLOM × 3 BARIS)", ...output,
+      "", "PROMPT GAMBAR STORYBOARD (ENGLISH — ONE COMPLETE 2×3 GRID)", "```text", gridPrompt, "```",
+      "", "NARASI / DIALOG", spoken,
+      "", "CONTINUITY LOCK",
+      `Subject lock: ${subject}. Preserve the exact package silhouette, proportions, colors, material, label, face, arms, and accessories in all six panels.`,
+      "Do not invent product specifications, benefits, certifications, logos, or claims.",
+      "Catatan: prompt ini menghasilkan instruksi tekstual; gambar storyboard perlu dirender di generator gambar."
     ].join("\n"));
   });
 
