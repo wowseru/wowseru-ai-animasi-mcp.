@@ -226,9 +226,10 @@ function makeServer(env) {
   });
 
   server.registerTool("generate_animation_prompts", {
-    description: "Membuat prompt gambar dan video berbahasa Inggris dengan timing, continuity lock, karakter/produk konsisten, dan negative constraints. Hanya setelah OK dan LANJUT.",
+    description: "Membuat prompt gambar dan video berbahasa Inggris dengan subject dari nama produk/karakter, gerakan spesifik, timing, narasi tersinkron, continuity lock, dan negative constraints. Hanya setelah OK dan LANJUT.",
     inputSchema: {
       scene: z.string().min(1), approval_id: z.string().uuid(), style: z.string().default("Animasi Objek Bicara (Realistis)"),
+      brand_product: z.string().optional(), product_details: z.string().optional(),
       character: z.string().optional(), aspect_ratio: z.string().default("9:16"),
       scene_number: z.number().int().positive().default(1), duration_seconds: z.number().positive().max(60).default(5),
       narration: z.string().optional(), language: z.string().optional(), camera_direction: z.string().optional(),
@@ -237,14 +238,53 @@ function makeServer(env) {
   }, async (a) => {
     const approval = await getApproval(env, a.approval_id);
     if (!approval?.lanjutAt) return textResult("Prompt produksi ditolak: tahap OK dan LANJUT belum tercatat untuk approval_id ini.", true);
-    const duration = a.duration_seconds, subject = a.character || "the main subject described in the scene";
-    const continuity = a.continuity_notes || "Keep identity, silhouette, colors, proportions, labels, accessories, lighting direction, and spatial position consistent across frames and scenes.";
+    const duration = a.duration_seconds;
+    const subject = a.brand_product || a.character || "karakter utama sesuai deskripsi scene";
+    const productFacts = a.product_details || "Hanya gunakan detail produk yang diberikan; jangan mengarang manfaat atau spesifikasi.";
+    const continuity = a.continuity_notes || `Keep the same ${subject} identity, package silhouette, proportions, colors, material, supplied label, face, arms, and accessories consistent in every frame.`;
     const negative = a.negative_prompt || "No identity drift, product deformation, changing colors or labels, extra/missing parts, flicker, jitter, broken anatomy, random text, fake logos, watermark, unexplained object changes, or unsupported claims.";
-    const t1 = (duration * .25).toFixed(1), t2 = (duration * .55).toFixed(1), t3 = (duration * .8).toFixed(1);
-    const timeline = [`0.0-${t1}s: Establish subject and environment with a readable composition.`, `${t1}-${t2}s: Execute the primary action smoothly with plausible weight and contact.`, `${t2}-${t3}s: Show key detail or emotional beat while preserving identity.`, `${t3}-${duration.toFixed(1)}s: Settle into a clean hero frame suitable for transition.`];
-    const imagePrompt = `STORY CONCEPT: ${a.scene}\nCONTINUITY LOCK: ${continuity}\nCONSISTENT TALENT / CHARACTER: ${subject}; preserve identity, silhouette, proportions, colors, materials, and accessories.\nPRODUCT / OBJECT CONSISTENCY: show only details supplied in the brief; do not invent specifications, labels, logos, or claims.\nVISUAL CONTINUITY: ${a.camera_direction || "Clean cinematic composition and motivated camera angle."} Keep lighting direction, background geography, screen direction, and object placement coherent.\nSTYLE: ${a.style}; portrait ${a.aspect_ratio}; polished composition, clear focal point.\nIMPORTANT / NEGATIVE CONSTRAINTS: ${negative}. No tiny generated text; add typography during editing.`;
-    const videoPrompt = `Animate this scene in ${a.style}, portrait ${a.aspect_ratio}, total duration ${duration} seconds.\nSCENE: ${a.scene}\nSUBJECT LOCK: ${subject}. Keep identity and defining features unchanged.\nCONTINUITY LOCK: ${continuity}\nCAMERA DIRECTION: ${a.camera_direction || "Smooth motivated dolly-in, stable horizon and controlled focus."}\nTIMED ACTION: ${timeline.join(" ")}\nMOTION QUALITY: coherent acceleration, natural contact and weight, no sudden teleporting or frame-to-frame shape changes.\nIMPORTANT / NEGATIVE CONSTRAINTS: ${negative}.`;
-    return textResult(["WOWSERU AI ANIMASI — PRODUCTION PROMPTS", `Scene ${a.scene_number}: ${a.scene}`, `Style: ${a.style}`, `Subject: ${subject}`, `Aspect ratio: ${a.aspect_ratio}`, `Duration: ${duration}s`, "", "IMAGE PROMPT (ENGLISH — READY TO COPY)", "```text", imagePrompt, "```", "", "VIDEO PROMPT (ENGLISH — READY TO COPY)", "```text", videoPrompt, "```", "", "TIMING BREAKDOWN", ...timeline, "", "CONTINUITY CHECKLIST", `- Subject: ${subject}.`, `- Visual lock: ${continuity}.`, `- Negative constraints: ${negative}`, `- Narasi: ${a.narration || "Belum diberikan; susun sesuai brief dan bahasa yang diminta."}`, "Catatan: tool ini menghasilkan prompt tekstual, bukan file gambar atau video final."].join("\n"));
+    const scene = a.scene;
+    const lowerScene = scene.toLowerCase();
+    let actionTimeline;
+    if (/wave|melamba|menyapa|sapa/.test(lowerScene)) {
+      actionTimeline = [
+        `0.0-${(duration*.2).toFixed(1)}s: ${subject} faces the camera; establish the full package and friendly expression.`,
+        `${(duration*.2).toFixed(1)}-${(duration*.55).toFixed(1)}s: the character raises one small cartoon arm and waves clearly toward the viewer; keep the package body stable.`,
+        `${(duration*.55).toFixed(1)}-${(duration*.8).toFixed(1)}s: the character smiles, blinks naturally, and finishes the greeting gesture.`,
+        `${(duration*.8).toFixed(1)}-${duration.toFixed(1)}s: the arm settles and ${subject} holds a friendly front-facing hero pose.`
+      ];
+    } else {
+      actionTimeline = [
+        `0.0-${(duration*.2).toFixed(1)}s: establish ${subject} and the setting in a readable frame.`,
+        `${(duration*.2)}-${(duration*.55).toFixed(1)}s: perform the exact main action described here: ${scene}; keep motion clear and physically coherent.`,
+        `${(duration*.55).toFixed(1)}-${(duration*.8).toFixed(1)}s: show the key reaction or visual detail without changing subject identity.`,
+        `${(duration*.8).toFixed(1)}-${duration.toFixed(1)}s: resolve into a clean final hero frame.`
+      ];
+    }
+    const timeline = actionTimeline;
+    const narrationInput = (a.narration || "").trim();
+    const narrationDisabled = /^(tidak|no|false|off)$/i.test(narrationInput);
+    const narrationText = narrationDisabled ? "Narasi tidak digunakan." :
+      (!narrationInput || /^(ya|yes|true|on)$/i.test(narrationInput)
+        ? "Hai! Senang berkenalan denganmu!"
+        : narrationInput);
+    const language = a.language || "Bahasa Indonesia";
+    const narrationSection = narrationDisabled ? "Tidak ada narasi atau dialog." :
+      `Dialog (${language}): “${narrationText}”\nAudio timing: ${Math.max(0, duration*.28).toFixed(1)}-${Math.min(duration, duration*.68).toFixed(1)}s, while the character performs the greeting. Match mouth movement to the spoken words; do not add extra dialogue.`;
+    const camera = a.camera_direction || "Begin with a medium full-package shot, then use a gentle push-in during the wave; keep the front label visible and finish on a stable hero frame.";
+    const imagePrompt = `STORY CONCEPT: ${scene}\nSUBJECT / CHARACTER: ${subject}.\nPRODUCT DETAILS: ${productFacts}.\nCONSISTENT TALENT / CHARACTER: depict ${subject} as the same recognizable subject; preserve its package silhouette, proportions, colors, material, supplied label, face, arms, and accessories.\nCONTINUITY LOCK: ${continuity}\nVISUAL COMPOSITION: portrait ${a.aspect_ratio}; clear full subject, readable face and gesture, clean background, coherent lighting and perspective.\nSTYLE: ${a.style}; polished 3D animation look, clear focal point.\nIMPORTANT / NEGATIVE CONSTRAINTS: ${negative} No tiny generated text; add typography during editing.`;
+    const videoPrompt = `Animate ${subject} in ${a.style}, portrait ${a.aspect_ratio}, total duration ${duration} seconds.\nSCENE: ${scene}\nSUBJECT LOCK: ${subject}. Product details: ${productFacts}. Preserve the exact package identity and supplied design.\nCAMERA DIRECTION: ${camera}\nTIMED ACTION:\n${timeline.join("\n")}\n${narrationDisabled ? "AUDIO: no narration or dialogue." : `DIALOGUE / AUDIO (${language}): ${narrationText}. ${narrationSection}`}\nLIP SYNC: when dialogue is enabled, synchronize mouth movement naturally to the exact line; do not speak additional words.\nMOTION QUALITY: smooth anticipation, readable wave gesture, natural arm movement, coherent acceleration, stable package body, no teleporting or frame-to-frame shape changes.\nCONTINUITY LOCK: ${continuity}\nIMPORTANT / NEGATIVE CONSTRAINTS: ${negative}`;
+    return textResult([
+      "WOWSERU AI ANIMASI — PRODUCTION PROMPTS", `Scene ${a.scene_number}: ${scene}`,
+      `Style: ${a.style}`, `Subject: ${subject}`, `Product details: ${productFacts}`,
+      `Aspect ratio: ${a.aspect_ratio}`, `Duration: ${duration}s`, "",
+      "IMAGE PROMPT (ENGLISH — READY TO COPY)", "```text", imagePrompt, "```", "",
+      "VIDEO PROMPT (ENGLISH — READY TO COPY)", "```text", videoPrompt, "```", "",
+      "TIMING BREAKDOWN", ...timeline, "", "NARASI / DIALOG", narrationSection, "",
+      "CONTINUITY CHECKLIST", `- Subject: ${subject}.`, `- Product details: ${productFacts}.`,
+      `- Visual lock: ${continuity}.`, `- Negative constraints: ${negative}`,
+      "Catatan: tool ini menghasilkan prompt tekstual, bukan file gambar atau video final."
+    ].join("\n"));
   });
   return server;
 }
