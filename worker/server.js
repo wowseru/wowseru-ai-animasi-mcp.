@@ -102,7 +102,15 @@ function makeServer(env) {
       const narrationLine = a.narration && !/^(ya|yes|aktif)$/i.test(a.narration.trim())
         ? a.narration
         : `Lihat ${a.brand_product || "cerita ini"}!`;
-      const imagePrompt = `Create one polished ${a.style} storyboard image in a ${a.resolution} aspect ratio. STORY CONCEPT: ${idea}. SCENE PURPOSE: ${phase}. SUBJECT / PRODUCT LOCK: ${a.brand_product || "Use only the subject described in the approved brief"}. PRODUCT FACTS: ${a.product_details || "No product specifications were supplied; do not invent claims or features."}. TARGET AUDIENCE: ${a.audience || "General audience"}. VISUAL STYLE: ${a.visual_style || a.style}. COMPOSITION: clear focal point, readable silhouette, coherent perspective, cinematic lighting, intentional camera framing. CONTINUITY: preserve identity, shape, proportions, colors, materials, supplied packaging, labels, accessories, environment, lighting direction, and screen direction. IMPORTANT: no random text, misspelled lettering, fake logos, watermark, deformation, flicker, or unsupported product claims.`;
+      const panelBeats = [
+        "Panel 1 (top-left): wide establishing shot; introduce the setting and subject.",
+        "Panel 2 (top-right): medium shot; reveal the subject's defining silhouette and expression.",
+        "Panel 3 (middle-left): medium close-up; begin the main action.",
+        "Panel 4 (middle-right): close-up; show the key reaction or meaningful detail.",
+        "Panel 5 (bottom-left): dynamic shot; complete the action and build to the payoff.",
+        "Panel 6 (bottom-right): clean hero shot; finish with a memorable final pose and space for a CTA overlay."
+      ];
+      const imagePrompt = `Create ONE complete storyboard sheet in ${a.resolution}, arranged as EXACTLY 2 COLUMNS x 3 ROWS (six panels total), read left-to-right then top-to-bottom. ${panelBeats.join(" ")} STORY CONCEPT: ${idea}. SCENE PURPOSE: ${phase}. SUBJECT / PRODUCT LOCK: ${a.brand_product || "Use only the subject described in the approved brief"}. PRODUCT FACTS: ${a.product_details || "No product specifications were supplied; do not invent claims or features."}. TARGET AUDIENCE: ${a.audience || "General audience"}. VISUAL STYLE: ${a.visual_style || a.style}. Keep all six panels in one consistent visual style with matching character design, proportions, colors, materials, packaging, labels, accessories, environment, lighting direction, and screen direction. Use clear gutters between panels. No extra panels, no missing panels, no random text, misspelled lettering, fake logos, watermark, deformation, flicker, or unsupported product claims.`;
       const videoPrompt = `Create a ${seconds}-second ${a.style} animation in ${a.resolution}. SCENE CONCEPT: ${idea}. TIMELINE: 0-${(seconds * .2).toFixed(1)}s establish the subject and setting; ${(seconds * .2).toFixed(1)}-${(seconds * .55).toFixed(1)}s perform the main action; ${(seconds * .55).toFixed(1)}-${(seconds * .8).toFixed(1)}s show the key reaction or visual detail; ${(seconds * .8).toFixed(1)}-${seconds}s resolve into a clean final frame. CAMERA: smooth motivated movement, stable horizon, deliberate framing, no abrupt unexplained cuts. SUBJECT LOCK: ${a.brand_product || "the approved brief's subject"}. CONTINUITY LOCK: preserve identity, silhouette, proportions, color, material, supplied labels and accessories, lighting direction, environment layout, and screen direction. NEGATIVE CONSTRAINTS: no identity drift, redesign, deformation, extra/missing parts, flicker, jitter, teleporting, random text, fake logos, watermark, or unsupported claims.`;
       return {
         title: `SCENE ${i + 1}`,
@@ -151,11 +159,17 @@ function makeServer(env) {
       "RANGKAIAN SCENE",
       ...sceneOutput,
       "",
+      "CTA DAN TEXT OVERLAY",
+      `CTA: ${a.brand_product ? `Kenali ${a.brand_product} lebih dekat.` : "Ajak penonton mengenal cerita lebih lanjut."}`,
+      "Text overlay: gunakan teks singkat, terbaca, dan hanya berdasarkan informasi yang diberikan; jangan membuat klaim produk baru.",
+      "",
       "CONTINUITY CHECKLIST",
       "- Pertahankan identitas, bentuk, warna, proporsi, kemasan, label, logo, aksesori, dan detail yang memang diberikan.",
       "- Scene berikutnya dimulai dari posisi akhir, arah gerak, pencahayaan, dan tata letak scene sebelumnya.",
       "- Hindari anatomi rusak, flicker, jitter, objek muncul/hilang, teks acak, watermark, dan klaim produk yang tidak didukung.",
       `Link produk/konten: ${a.product_link || "Tidak diberikan"}`,
+      "",
+      "Terima kasih sudah menggunakan Tools AI Animasi WOWSERU.",
       "",
       "Catatan: keluaran ini adalah konsep dan prompt tekstual untuk generator gambar/video, bukan file video hasil render."
     ].join("\n"));
