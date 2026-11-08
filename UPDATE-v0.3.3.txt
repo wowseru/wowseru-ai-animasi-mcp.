@@ -1,0 +1,16 @@
+WOWSERU AI ANIMASI MCP — update v0.3.3
+
+Worker approval storage changed from isolate-local in-memory Map to a
+SQLite-backed Cloudflare Durable Object (ApprovalStore).
+
+Updated:
+- worker/server.js
+- worker/wrangler.jsonc
+- worker/package.json (version 0.3.3)
+- worker/README.md
+
+All other plugin assets, manifests, starter files, and skill copies are retained
+from the prior COMPLETE_v2 package.
+
+Deployment is not performed by creating this ZIP. Deploy from the repository
+after replacing its contents with this package.
