@@ -1,17 +1,26 @@
-# WOWSERU AI Animasi MCP — Cloudflare Worker adaptation of v0.3.2
+# WOWSERU AI ANIMASI — Cloudflare Worker v0.3.3
 
-Files:
-- `server.js`: Worker entry point, 5 MCP tools, health endpoints.
-- `package.json`: dependency versions aligned to the successfully deployed Cloudflare build.
-- `wrangler.jsonc`: Worker configuration.
-- `skills/wowseru-ai-animasi/SKILL.md`: original v0.3.2 skill reference.
+MCP endpoint: `/mcp`
 
-## Important limitations before public use
+## Deploy configuration
+- Cloudflare Root directory: `worker`
+- Build command: None
+- Deploy command: `npx wrangler deploy`
 
-1. Approval state (`OK` → `LANJUT`) is stored in a JavaScript `Map` in memory. Cloudflare Workers may use different isolates and can restart, so this is not durable or a secure proof of human approval. Use Durable Objects or another persistent store bound to an authenticated user/session before treating it as a production gate.
-2. This package has been prepared from the supplied v0.3.2 starter and the known working Cloudflare handler pattern, but must be tested in a staging Worker before replacing the current live Worker.
-3. Tools generate text concepts and prompts, not rendered images or videos.
+## Approval persistence
+Approval state for `OK` → `LANJUT` → production is stored in the SQLite-backed
+Cloudflare Durable Object class `ApprovalStore`, through the `APPROVALS` binding.
+Records expire after two hours.
 
-## Deploy safely
+The `wrangler.jsonc` file declares the `APPROVALS` binding and the `v1` migration.
+Keep the Durable Object class name `ApprovalStore` stable after deployment.
 
-Deploy first to a separate staging Worker name by changing `name` in `wrangler.jsonc` (for example `wowseru-ai-animasi-staging`), test `/`, `/health`, and `tools/list`, and only then decide whether to deploy to the production Worker.
+## MCP tools
+1. `confirm_animation_brief`
+2. `confirm_animation_lanjut`
+3. `create_animation_concept`
+4. `create_storyboard`
+5. `generate_animation_prompts`
+
+These tools produce concepts, storyboard text, and prompts. They do not render
+or export a final video file.

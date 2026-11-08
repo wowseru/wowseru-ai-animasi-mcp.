@@ -2,24 +2,50 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
 
-// Cloudflare Worker adaptation of the WOWSERU AI Animasi v0.3.2 starter.
-// Approval state is in-memory and is NOT durable across isolates/restarts.
-const approvals = new Map();
+// Approval state is stored in a Cloudflare Durable Object so it is shared
+// across Worker isolates and requests. Approval records expire after 2 hours.
 const APPROVAL_TTL_MS = 2 * 60 * 60 * 1000;
 
-function getApproval(id) {
-  const state = approvals.get(id);
-  if (!state) return undefined;
-  if (Date.now() - state.approvedAt > APPROVAL_TTL_MS) {
-    approvals.delete(id);
-    return undefined;
-  }
-  return state;
+function approvalStore(env) {
+  if (!env.APPROVALS) throw new Error("Binding Durable Object APPROVALS belum dikonfigurasi.");
+  const id = env.APPROVALS.idFromName("wowseru-approval-store");
+  return env.APPROVALS.get(id);
+}
+
+async function getApproval(env, id) {
+  const response = await approvalStore(env).fetch("https://approval-store/get", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ approval_id: id })
+  });
+  if (response.status === 404) return undefined;
+  if (!response.ok) throw new Error(`Gagal membaca approval: HTTP ${response.status}`);
+  return response.json();
+}
+
+async function saveApproval(env, id, state) {
+  const response = await approvalStore(env).fetch("https://approval-store/set", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ approval_id: id, state })
+  });
+  if (!response.ok) throw new Error(`Gagal menyimpan approval: HTTP ${response.status}`);
+}
+
+async function markApprovalLanjut(env, id) {
+  const response = await approvalStore(env).fetch("https://approval-store/lanjut", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ approval_id: id })
+  });
+  if (response.status === 404) return undefined;
+  if (!response.ok) throw new Error(`Gagal memperbarui approval: HTTP ${response.status}`);
+  return response.json();
 }
 function textResult(text, isError = false) {
   return { content: [{ type: "text", text }], ...(isError ? { isError: true } : {}) };
 }
-function makeServer() {
+function makeServer(env) {
   const skillInstructions = "---\nname: wowseru-ai-animasi\ndescription: Membantu pengguna menyusun konsep, storyboard, dan prompt video AI WOWSERU melalui brief, konfirmasi OK, dan instruksi LANJUT sebelum produksi.\n---\n\n# WOWSERU AI ANIMASI\n\n## 1. Identitas dan aturan umum\n\n- Nama produk: **WOWSERU AI ANIMASI**.\n- Brand/developer: **WOWSERU**.\n- Gunakan Bahasa Indonesia secara default, kecuali pengguna meminta bahasa lain.\n- Jangan menyebut WIC sebagai pemilik atau brand tools.\n- Jangan mengklaim dapat merender, membuat, atau mengekspor file video final. Hasil tools ini berupa konsep dan prompt yang dapat digunakan pada generator gambar/video.\n- Jangan mengarang detail produk, USP, harga, bahan, kandungan, testimoni, garansi, promo, stok, atau tautan.\n- Jika ada foto produk/karakter, jadikan foto sebagai referensi utama untuk ciri visual yang terlihat.\n\n## 2. Pembuka percakapan\n\nPada percakapan baru, tunggu pengguna memilih conversation starter **Mulai** atau mengetik **Mulai**.\n\nJika pengguna hanya menyapa atau belum mengetik/memilih **Mulai**, balas singkat:\n\n> Tekan Mulai untuk memulai WOWSERU AI ANIMASI.\n\nJangan tampilkan daftar atau template sebelum pengguna memulai.\n\nSetelah pengguna mengetik/memilih **Mulai**, tampilkan pembuka berikut. Pertahankan judul dan daftar sebagai informasi pilihan yang tersedia, bukan formulir pilihan wajib.\n\n# Selamat datang di WOWSERU AI ANIMASI 🎬\n\n### List STYLE AI Animasi apa yang bisa dibuat?\n\n1. Animasi Umum\n2. Animasi Objek Bicara\n3. Animasi Objek Bicara (Realistis)\n4. Animasi Fakta Unik\n5. Animasi Cerita Horror\n6. Animasi Cerita Rakyat\n\n### List GAYA ANIMASI apa yang bisa dibuat?\n\n3D Cartoon / 3D Cartoon Pixar-Style / Realistic Cinematic / Anime (Japan Style) / Flannel Animation Style / Cinematic Action Movie Still Style / Studio Ghibli / Donghua (Chinese Animation) / Claymation / 2.5D Style / Webtoon Style\n\n### 🎨 GAYA ANIMASI Lainnya\n\n[Klik di sini untuk pilihan gaya animasi lainnya](https://ai.wowseru.com/)\n\n### Sebelum bikin Video AI, Isi Format Di Bawah Ini Dulu Ya: 👇🏻\n\n```yaml\n• Nama Brand + Produk :\n• Detail Produk / Usp:\n• Target Audience:\n• Resolusi Video: Tiktok Vertical 9:16\n• Durasi Video(Detik): 30 Detik\n• Adegan (Scene): 3\n• Pakai Narasi?: Ya / Tidak\n• Pakai Model Manusia/Karakter : Ya / Tidak\n• Link Produk/Konten: Opsional\n• Upload Foto Karakter + Produk: Opsional\n• Mode: Normal / Deep Research\n• Style Animasi : Animasi Objek Bicara (Realistis)\n• Gaya Visual : Realistic Cinematic\n• Request Bahasa :\n\n• Ide Cerita Scene 1 :\n• Ide Cerita Scene 2 :\n• Ide Cerita Scene 3 :\n```\n\n💡 Detail produk bisa berisi fitur, bahan, ukuran, kandungan, tekstur, fungsi, cara pakai, keunggulan, pain point, masalah target audience, pengalaman penggunaan, dan informasi penting lainnya.\n\n## 3. Pengisian brief\n\n- Template di atas adalah satu template utama. Tampilkan sebagai teks biasa dalam satu blok; jangan menggantinya dengan form interaktif, radio button, atau formulir bertahap.\n- Jangan menghilangkan, mengganti nama, menggabungkan, atau mengubah urutan kolom.\n- Pertahankan nilai yang diberikan pengguna. Jangan mengubah pilihan, durasi, resolusi, jumlah scene, narasi, karakter, mode, style, gaya visual, atau bahasa secara diam-diam.\n- Nilai yang sudah tertulis pada template merupakan nilai awal yang ditampilkan. Jangan menganggap pilihan `Ya / Tidak` sebagai jawaban pengguna sebelum pengguna memilihnya.\n- Pengguna boleh mengisi sebagian template. Jangan meminta ulang informasi yang sudah diberikan.\n- Tanyakan hanya informasi penting yang masih kosong dan benar-benar diperlukan.\n- Untuk cerita non-komersial, pengguna boleh mengisi `Nama Brand + Produk` atau `Detail Produk / Usp` dengan `Tidak ada`.\n- Jika pengguna hanya memberi nama produk, beberapa kata, atau ide singkat, tafsirkan secara wajar sebagai ide awal bila memungkinkan. Tandai detail kreatif tambahan sebagai **asumsi/usulan**, bukan fakta.\n- Jika jawaban terlalu tidak jelas untuk ditafsirkan, ajukan satu pertanyaan klarifikasi singkat daripada mengarang brief.\n- Jika USP belum diberikan, gunakan hanya fakta yang diberikan atau ciri visual yang benar-benar terlihat. Jangan membuat klaim produk yang tidak didukung.\n- Mode **Deep Research** berarti melakukan riset hanya jika kemampuan pencarian tersedia. Pisahkan fakta bersumber dari asumsi dan sertakan sumber jika riset benar-benar dilakukan.\n- Jika pengguna meminta gaya yang tidak tersedia atau dibatasi, jelaskan singkat dan tawarkan deskripsi visual alternatif yang sesuai.\n- Jika pengguna memilih atau meminta gaya lain, arahkan ke tautan referensi di atas atau gunakan deskripsi gaya yang pengguna berikan.\n\n## 4. Alur persetujuan wajib\n\nKonfirmasi berlaku untuk semua brief, baik lengkap, sebagian, singkat, maupun acak. Brief yang lengkap bukan berarti sudah disetujui.\n\n### Tahap A — Susun dan konfirmasi brief\n\n1. Rapikan informasi pengguna ke dalam template brief lengkap.\n2. Isi nilai default yang berlaku hanya untuk kolom yang belum dijawab. Tandai usulan kreatif sebagai **asumsi/usulan**.\n3. Tampilkan seluruh template yang sudah diisi, termasuk semua kolom opsional dan ide untuk setiap scene.\n4. Rangkum poin penting brief agar pengguna mudah memeriksanya.\n5. Tanyakan dengan jelas: **“Apakah brief ini sudah benar? Balas OK untuk menyetujui atau tulis perubahan yang kamu inginkan.”**\n6. Jika pengguna mengubah informasi apa pun, perbarui brief dan minta konfirmasi ulang. Jangan mulai produksi.\n7. Hanya balasan **OK** yang jelas dan merujuk pada brief terbaru yang dianggap sebagai persetujuan.\n8. Jika pengguna mengetik **OK** sebelum brief lengkap ditampilkan, tampilkan/rangkum brief terlebih dahulu dan minta konfirmasi lagi.\n9. Setelah brief disetujui, balas singkat bahwa brief telah disetujui dan ingatkan pengguna untuk mengetik **LANJUT** saat siap produksi.\n\n### Tahap B — Mulai produksi\n\n1. Jangan membuat hasil produksi sebelum brief terbaru disetujui dengan **OK** dan pengguna memberi instruksi **LANJUT**.\n2. Jika pengguna mengetik **LANJUT** sebelum brief terbaru disetujui, jangan produksi. Tampilkan brief dan minta persetujuan **OK** terlebih dahulu.\n3. Setelah brief disetujui, pengguna dapat mengetik **LANJUT** untuk meminta hasil produksi.\n4. Permintaan produksi dalam pesan yang sama dengan persetujuan hanya boleh diproses jika pengguna secara eksplisit menyetujui brief terbaru dan secara eksplisit meminta produksi.\n5. Setelah syarat terpenuhi, buat konsep dan seluruh keluaran produksi sesuai brief. Jangan meminta persetujuan konsep kedua sebagai tahapan wajib tambahan kecuali pengguna memang ingin meninjau konsep terlebih dahulu.\n\n## 5. Standar keluaran produksi\n\nSetelah brief disetujui dan pengguna mengetik **LANJUT**, susun hasil berdasarkan jumlah scene, durasi, style, gaya visual, bahasa, dan pilihan narasi dalam brief.\n\nUrutan keluaran:\n\n1. Ringkasan brief dan asumsi yang digunakan.\n2. Konsep utama video dan hook.\n3. **Prompt Thumbnail** dalam bahasa Inggris.\n4. **Storyboard untuk setiap scene**, satu prompt lengkap per scene.\n5. **Prompt Video untuk setiap scene**, satu prompt per scene.\n6. Narasi/voice-over atau dialog sesuai bahasa yang diminta jika narasi diaktifkan.\n7. CTA dan teks overlay jika sesuai brief.\n8. Continuity checklist dan production notes.\n9. Penutup wajib: **“Terima kasih sudah menggunakan Tools AI Animasi WOWSERU.”**\n\nJangan menghilangkan scene atau mengubah jumlah scene yang diminta pengguna.\n\n## 6. Aturan prompt dan format penyalinan\n\n- Setiap prompt untuk generator gambar atau video wajib berada dalam fenced code block tersendiri menggunakan tiga backtick.\n- Jangan menggabungkan prompt yang berbeda ke dalam satu blok kode.\n- Beri judul tepat sebelum setiap blok, misalnya **Prompt Thumbnail**, **Prompt Gambar — Storyboard Scene 1**, dan **Prompt Video — Scene 1**.\n- Isi blok kode hanya dengan prompt siap salin. Penjelasan, narasi, catatan editing, dan rekomendasi ditulis di luar blok.\n- Prompt visual utama ditulis dalam bahasa Inggris agar mudah digunakan lintas generator.\n- Narasi/dialog ditulis dalam bahasa yang diminta pengguna.\n- Prompt storyboard satu scene boleh memuat keenam panel dalam satu blok kode.\n- Jangan menaruh prompt video scene lain di dalam blok prompt scene yang berbeda.\n\n## 7. Standar storyboard\n\nUntuk setiap scene:\n\n- Buat satu storyboard berbentuk grid **2×3**, tepat **6 panel**.\n- Beri label dan urutan aksi yang jelas: Panel 1 sampai Panel 6.\n- Setiap panel harus menggambarkan perkembangan aksi yang masuk akal dalam scene tersebut.\n- Sertakan story concept, continuity lock, consistent talent/character lock, product/object lock, visual continuity, dan camera direction.\n- Jaga agar karakter, produk, objek, lokasi, pencahayaan, kostum, warna, dan properti tetap konsisten.\n- Scene 2 harus melanjutkan langsung dari keadaan/frame terakhir Scene 1. Scene berikutnya juga harus meneruskan akhir scene sebelumnya, kecuali pengguna meminta perubahan.\n\n## 8. Standar prompt video\n\nUntuk setiap scene, buat prompt video dengan:\n\n- Story concept dan tujuan scene.\n- Continuity lock.\n- Consistent talent/character lock.\n- Product/object consistency.\n- Visual continuity.\n- Camera direction dan pergerakan kamera.\n- Aksi, ekspresi, gerak, dan transisi.\n- Negative prompt / important constraints.\n- Timing yang sesuai dengan durasi scene.\n- Narasi/dialog per segmen jika diaktifkan.\n\nBagi durasi total secara masuk akal ke jumlah scene. Untuk video 30 detik dengan 3 scene, gunakan sekitar 10 detik per scene. Untuk scene 10 detik, gunakan pembagian waktu:\n- 0–2 detik\n- 2–4 detik\n- 4–6 detik\n- 6–8 detik\n- 8–10 detik\n\nJika durasi scene berbeda, sesuaikan rentang waktunya; jangan memaksakan pembagian 10 detik.\n\n## 9. Continuity lock dan negative prompt\n\nGunakan continuity lock global dan per scene bila diperlukan.\n\nJaga konsistensi:\n- Identitas, wajah, anatomi, proporsi, pakaian, aksesori, dan ciri karakter.\n- Bentuk, ukuran, warna, tekstur, kemasan, label, logo, aksesori, dan detail produk/objek.\n- Lokasi, latar, properti, pencahayaan, cuaca, arah gerak, dan posisi objek.\n- Posisi akhir scene sebelumnya sebagai titik awal scene berikutnya.\n\nNegative prompt default:\n- No identity change.\n- No character redesign.\n- No inconsistent anatomy, extra fingers, fused fingers, or deformed hands.\n- No product shape, size, color, packaging, label, logo, topping, or accessory changes.\n- No flicker, jitter, broken motion, or abrupt unexplained movement.\n- No objects appearing or disappearing without cause.\n- No random text, misspelled text, fake logos, or watermark.\n- No unrequested location, lighting, costume, or prop changes.\n- No unsupported product claims.\n\nSesuaikan negative prompt dengan kebutuhan brief. Jangan memasukkan larangan yang bertentangan dengan aksi yang memang diminta pengguna.\n\n## 10. Akurasi produk dan referensi visual\n\n- Jika pengguna mengunggah foto produk/karakter, deskripsikan dan pertahankan ciri yang benar-benar terlihat.\n- Jangan mengubah bentuk, warna, proporsi, kemasan, label, logo, aksesori, topping, atau detail khas yang tampak pada referensi.\n- Foto bersifat opsional untuk konsep awal, tetapi minta referensi visual jika kemiripan produk/karakter yang akurat menjadi kebutuhan utama.\n- Jangan menyimpulkan harga, kandungan, bahan, rasa, manfaat, atau klaim lain dari foto jika tidak terbaca atau tidak diberikan pengguna.\n- Jika detail belum tersedia, sebutkan keterbatasannya dan gunakan asumsi kreatif yang aman secara transparan.\n\n## 11. Pemeriksaan akhir\n\nSebelum mengirim hasil, pastikan:\n- Brief dan seluruh pilihan pengguna dipertahankan.\n- Jumlah scene dan durasi sesuai brief.\n- Ada satu prompt thumbnail.\n- Setiap scene memiliki storyboard 2×3 dengan tepat enam panel.\n- Setiap scene memiliki prompt video tersendiri dengan timing yang sesuai.\n- Prompt siap salin berada di code block terpisah.\n- Narasi/dialog sesuai pilihan dan bahasa pengguna.\n- Continuity antar-scene terjaga.\n- Tidak ada klaim produk yang tidak didukung.\n- Tidak mengklaim telah menghasilkan file video final.\n\nAkhiri dengan kalimat wajib:\n\n**Terima kasih sudah menggunakan Tools AI Animasi WOWSERU.**\n";
   const server = new McpServer({ name: "wowseru-ai-animasi", version: "0.3.2" }, { instructions: skillInstructions });
 
@@ -32,7 +58,7 @@ function makeServer() {
   }, async ({ brief, confirmation_text }) => {
     if (confirmation_text !== "OK") return textResult("Persetujuan belum tercatat. Tampilkan brief lengkap dan tunggu pengguna membalas OK.", true);
     const approval_id = crypto.randomUUID();
-    approvals.set(approval_id, { brief: brief.trim(), approvedAt: Date.now() });
+    await saveApproval(env, approval_id, { brief: brief.trim(), approvedAt: Date.now() });
     return textResult(`Brief disetujui dan dicatat. approval_id: ${approval_id}. Belum boleh produksi; tunggu pengguna mengetik LANJUT, lalu panggil confirm_animation_lanjut dengan approval_id ini.`);
   });
 
@@ -43,9 +69,10 @@ function makeServer() {
       confirmation_text: z.literal("LANJUT").describe("Harus persis LANJUT setelah persetujuan OK untuk brief yang sama.")
     }
   }, async ({ approval_id, confirmation_text }) => {
-    const state = getApproval(approval_id);
+    const state = await getApproval(env, approval_id);
     if (!state || confirmation_text !== "LANJUT") return textResult("LANJUT belum diterima untuk approval_id yang valid. Pastikan brief sudah disetujui dengan OK dan gunakan approval_id yang masih berlaku.", true);
-    state.lanjutAt = Date.now();
+    const updated = await markApprovalLanjut(env, approval_id);
+    if (!updated) return textResult("LANJUT gagal dicatat: approval tidak ditemukan atau kedaluwarsa.", true);
     return textResult(`LANJUT tercatat untuk brief yang disetujui. approval_id: ${approval_id}. Tool produksi sekarang dapat dipanggil untuk brief ini.`);
   });
 
@@ -54,7 +81,7 @@ function makeServer() {
     inputSchema: {
       brief: z.string().min(1), approval_id: z.string().uuid(),
       brand_product: z.string().optional(), product_details: z.string().optional(),
-      style: z.string().default("3D Cartoon"), visual_style: z.string().optional(),
+      style: z.string().default("Animasi Objek Bicara (Realistis)"), visual_style: z.string().default("Realistic Cinematic"),
       audience: z.string().optional(), resolution: z.string().default("Vertical 9:16"),
       duration_seconds: z.number().int().positive().max(300).default(30),
       scene_count: z.number().int().min(1).max(12).default(3), narration: z.string().optional(),
@@ -62,7 +89,7 @@ function makeServer() {
       mode: z.enum(["Normal", "Deep Research"]).default("Normal"), scene_ideas: z.array(z.string()).optional(), product_link: z.string().optional()
     }
   }, async (a) => {
-    const approval = getApproval(a.approval_id);
+    const approval = await getApproval(env, a.approval_id);
     if (!approval?.lanjutAt) return textResult("Produksi ditolak: tahap OK dan LANJUT belum tercatat untuk approval_id ini.", true);
     if (a.brief.trim() !== approval.brief) return textResult("Produksi ditolak: brief tidak sama dengan brief yang disetujui. Minta persetujuan ulang untuk brief terbaru.", true);
     const base = Math.floor(a.duration_seconds / a.scene_count), remainder = a.duration_seconds % a.scene_count;
@@ -91,12 +118,12 @@ function makeServer() {
   server.registerTool("create_storyboard", {
     description: "Membuat storyboard enam panel untuk satu scene setelah brief disetujui dengan OK dan pengguna mengetik LANJUT.",
     inputSchema: {
-      concept: z.string().min(1), approval_id: z.string().uuid(), style: z.string().default("3D Cartoon"),
+      concept: z.string().min(1), approval_id: z.string().uuid(), style: z.string().default("Animasi Objek Bicara (Realistis)"),
       character: z.string().optional(), scene_number: z.number().int().positive().default(1),
       scene_duration_seconds: z.number().positive().default(10), aspect_ratio: z.string().default("9:16"), language: z.string().optional(), narration: z.string().optional()
     }
   }, async (a) => {
-    const approval = getApproval(a.approval_id);
+    const approval = await getApproval(env, a.approval_id);
     if (!approval?.lanjutAt) return textResult("Storyboard ditolak: tahap OK dan LANJUT belum tercatat untuk approval_id ini.", true);
     const subject = a.character || "the main subject described in the approved brief";
     const panels = [
@@ -119,14 +146,14 @@ function makeServer() {
   server.registerTool("generate_animation_prompts", {
     description: "Membuat prompt gambar dan video berbahasa Inggris dengan timing, continuity lock, karakter/produk konsisten, dan negative constraints. Hanya setelah OK dan LANJUT.",
     inputSchema: {
-      scene: z.string().min(1), approval_id: z.string().uuid(), style: z.string().default("3D Cartoon Cinematic"),
+      scene: z.string().min(1), approval_id: z.string().uuid(), style: z.string().default("Animasi Objek Bicara (Realistis)"),
       character: z.string().optional(), aspect_ratio: z.string().default("9:16"),
       scene_number: z.number().int().positive().default(1), duration_seconds: z.number().positive().max(60).default(5),
       narration: z.string().optional(), language: z.string().optional(), camera_direction: z.string().optional(),
       continuity_notes: z.string().optional(), negative_prompt: z.string().optional()
     }
   }, async (a) => {
-    const approval = getApproval(a.approval_id);
+    const approval = await getApproval(env, a.approval_id);
     if (!approval?.lanjutAt) return textResult("Prompt produksi ditolak: tahap OK dan LANJUT belum tercatat untuk approval_id ini.", true);
     const duration = a.duration_seconds, subject = a.character || "the main subject described in the scene";
     const continuity = a.continuity_notes || "Keep identity, silhouette, colors, proportions, labels, accessories, lighting direction, and spatial position consistent across frames and scenes.";
@@ -140,13 +167,68 @@ function makeServer() {
   return server;
 }
 
-const handler = createMcpHandler(makeServer, { onerror: (error) => console.error("MCP ERROR:", error) });
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname === "/") return Response.json({ service: "wowseru-ai-animasi", version: "0.3.2", status: "ready", endpoint: "/mcp", tools: 5 });
-    if (url.pathname === "/health") return Response.json({ service: "wowseru-ai-animasi", version: "0.3.2", status: "ok", skill_loaded: true, mcp_endpoint: "/mcp", tools: 5 });
-    if (url.pathname === "/mcp") return handler(request, env, ctx);
+    if (url.pathname === "/") return Response.json({ service: "wowseru-ai-animasi", version: "0.3.3", status: "ready", endpoint: "/mcp", tools: 5, approval_storage: "durable-object" });
+    if (url.pathname === "/health") return Response.json({ service: "wowseru-ai-animasi", version: "0.3.3", status: "ok", skill_loaded: true, mcp_endpoint: "/mcp", tools: 5, approval_storage: "durable-object" });
+    if (url.pathname === "/mcp") {
+      const handler = createMcpHandler(() => makeServer(env), {
+        onerror: (error) => console.error("MCP ERROR:", error)
+      });
+      return handler(request, env, ctx);
+    }
     return new Response("Not Found", { status: 404 });
   }
 };
+
+// Durable Object: persistent, shared approval state for OK -> LANJUT -> production.
+export class ApprovalStore {
+  constructor(ctx, env) {
+    this.ctx = ctx;
+    this.env = env;
+  }
+
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
+    const body = await request.json();
+
+    if (url.pathname === "/set") {
+      const { approval_id, state } = body;
+      if (!approval_id || !state?.brief || !state?.approvedAt) {
+        return Response.json({ error: "Invalid approval record" }, { status: 400 });
+      }
+      await this.ctx.storage.put(`approval:${approval_id}`, state);
+      return Response.json({ ok: true });
+    }
+
+    if (url.pathname === "/get") {
+      const { approval_id } = body;
+      if (!approval_id) return Response.json({ error: "Missing approval_id" }, { status: 400 });
+      const state = await this.ctx.storage.get(`approval:${approval_id}`);
+      if (!state) return Response.json({ error: "Not found" }, { status: 404 });
+      if (Date.now() - state.approvedAt > APPROVAL_TTL_MS) {
+        await this.ctx.storage.delete(`approval:${approval_id}`);
+        return Response.json({ error: "Expired" }, { status: 404 });
+      }
+      return Response.json(state);
+    }
+
+    if (url.pathname === "/lanjut") {
+      const { approval_id } = body;
+      if (!approval_id) return Response.json({ error: "Missing approval_id" }, { status: 400 });
+      const key = `approval:${approval_id}`;
+      const state = await this.ctx.storage.get(key);
+      if (!state || Date.now() - state.approvedAt > APPROVAL_TTL_MS) {
+        if (state) await this.ctx.storage.delete(key);
+        return Response.json({ error: "Not found or expired" }, { status: 404 });
+      }
+      state.lanjutAt = Date.now();
+      await this.ctx.storage.put(key, state);
+      return Response.json(state);
+    }
+
+    return new Response("Not Found", { status: 404 });
+  }
+}

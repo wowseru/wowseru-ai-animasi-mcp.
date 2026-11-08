@@ -2,6 +2,14 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "wowseru-ai-animasi",
   "main": "server.js",
-  "compatibility_date": "2026-10-25",
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_date": "2026-11-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      { "name": "APPROVALS", "class_name": "ApprovalStore" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["ApprovalStore"] }
+  ]
 }
