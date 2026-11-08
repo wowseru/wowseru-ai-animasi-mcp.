@@ -94,24 +94,70 @@ function makeServer(env) {
     if (a.brief.trim() !== approval.brief) return textResult("Produksi ditolak: brief tidak sama dengan brief yang disetujui. Minta persetujuan ulang untuk brief terbaru.", true);
     const base = Math.floor(a.duration_seconds / a.scene_count), remainder = a.duration_seconds % a.scene_count;
     const scenes = Array.from({ length: a.scene_count }, (_, i) => {
-      const seconds = base + (i < remainder ? 1 : 0); const start = i * base + Math.min(i, remainder); const end = start + seconds;
-      const idea = a.scene_ideas?.[i] || a.brief;
-      const phase = i === 0 ? "Establish the visual hook and subject clearly" : i === a.scene_count - 1 ? "Resolve the story and end with a memorable final frame" : "Develop the action while preserving continuity";
-      return `SCENE ${i + 1}\nTiming: ${start}-${end}s (${seconds}s)\nTujuan: ${phase}.\nIde/aksi: ${idea}\nTransisi: ${i === 0 ? "Open clearly and establish geography" : "Continue from the prior scene's final pose, screen direction, lighting, and object placement"}.\nContinuity lock: preserve identity, silhouette, colors, proportions, accessories, product details, environment direction, and lighting.\nPrompt gambar (English): Create a polished ${a.style} storyboard image, aspect ratio ${a.resolution}. Story concept: ${idea}. Subject/product lock: ${a.brand_product || "subject in approved brief"}. Visual continuity: ${a.visual_style || a.style}; clear focal point, motivated camera, coherent perspective. Negative constraints: no identity drift, deformation, random text, fake logos, watermark, unsupported claims.\nPrompt video (English): Animate this scene for ${seconds} seconds. Action: ${idea}. Camera: smooth motivated movement, stable horizon, clear subject. Preserve exact identity, palette, proportions, materials, accessories, lighting and screen direction. No flicker, teleporting, unexplained object changes, random text, watermark, or unsupported claims.\nNarasi: ${a.narration || "Susun narasi sesuai brief dan bahasa yang diminta; jangan menambahkan klaim yang tidak didukung."}`;
+      const seconds = base + (i < remainder ? 1 : 0);
+      const from = i * base + Math.min(i, remainder);
+      const to = from + seconds;
+      const idea = a.scene_ideas?.[i] || `Show ${a.brand_product || "the main subject"} in a clear, engaging visual moment that follows the approved brief`;
+      const phase = i === 0 ? "Introduce the subject and establish the visual hook" : i === a.scene_count - 1 ? "Resolve the story and finish on a memorable final frame" : "Develop the action while continuing directly from the previous scene";
+      const narrationLine = a.narration && !/^(ya|yes|aktif)$/i.test(a.narration.trim())
+        ? a.narration
+        : `Lihat ${a.brand_product || "cerita ini"}!`;
+      const imagePrompt = `Create one polished ${a.style} storyboard image in a ${a.resolution} aspect ratio. STORY CONCEPT: ${idea}. SCENE PURPOSE: ${phase}. SUBJECT / PRODUCT LOCK: ${a.brand_product || "Use only the subject described in the approved brief"}. PRODUCT FACTS: ${a.product_details || "No product specifications were supplied; do not invent claims or features."}. TARGET AUDIENCE: ${a.audience || "General audience"}. VISUAL STYLE: ${a.visual_style || a.style}. COMPOSITION: clear focal point, readable silhouette, coherent perspective, cinematic lighting, intentional camera framing. CONTINUITY: preserve identity, shape, proportions, colors, materials, supplied packaging, labels, accessories, environment, lighting direction, and screen direction. IMPORTANT: no random text, misspelled lettering, fake logos, watermark, deformation, flicker, or unsupported product claims.`;
+      const videoPrompt = `Create a ${seconds}-second ${a.style} animation in ${a.resolution}. SCENE CONCEPT: ${idea}. TIMELINE: 0-${(seconds * .2).toFixed(1)}s establish the subject and setting; ${(seconds * .2).toFixed(1)}-${(seconds * .55).toFixed(1)}s perform the main action; ${(seconds * .55).toFixed(1)}-${(seconds * .8).toFixed(1)}s show the key reaction or visual detail; ${(seconds * .8).toFixed(1)}-${seconds}s resolve into a clean final frame. CAMERA: smooth motivated movement, stable horizon, deliberate framing, no abrupt unexplained cuts. SUBJECT LOCK: ${a.brand_product || "the approved brief's subject"}. CONTINUITY LOCK: preserve identity, silhouette, proportions, color, material, supplied labels and accessories, lighting direction, environment layout, and screen direction. NEGATIVE CONSTRAINTS: no identity drift, redesign, deformation, extra/missing parts, flicker, jitter, teleporting, random text, fake logos, watermark, or unsupported claims.`;
+      return {
+        title: `SCENE ${i + 1}`,
+        timing: `${from}-${to}s (${seconds}s)`,
+        purpose: phase,
+        idea,
+        imagePrompt,
+        videoPrompt,
+        narration: narrationLine
+      };
     });
-    const thumbnail = `Create a polished ${a.style} key visual for a ${a.resolution} AI animation. Subject/brand: ${a.brand_product || "the subject specified in the approved brief"}. Brief: ${a.brief}. Product details: ${a.product_details || "not provided; do not invent product claims"}. Audience: ${a.audience || "general audience"}. Strong readable focal point, cinematic composition, controlled lighting, clean background, no tiny generated text, no watermark, no invented logo or unsupported claim.`;
+    const hookSubject = a.brand_product || a.scene_ideas?.[0] || "cerita utama";
+    const hook = `Pernah lihat ${hookSubject} dengan cara yang berbeda?`;
+    const thumbnail = `Create a striking ${a.style} key visual for WOWSERU AI ANIMASI, ${a.resolution}. MAIN SUBJECT: ${hookSubject}. STORY: ${scenes[0].idea}. VISUAL STYLE: ${a.visual_style || a.style}. Create a strong curiosity-driven focal point, expressive readable pose, cinematic composition, polished lighting, uncluttered background, and clear visual hierarchy. Preserve all supplied product and character details. Do not add unsupported claims, invented logos, tiny text, random lettering, or watermark.`;
+    const promptBlock = (label, prompt) => `${label}\n\`\`\`text\n${prompt}\n\`\`\``;
+    const sceneOutput = scenes.flatMap((scene) => [
+      scene.title,
+      `Timing: ${scene.timing}`,
+      `Tujuan cerita: ${scene.purpose}.`,
+      `Ide/aksi: ${scene.idea}`,
+      `Narasi/dialog (${a.language}): ${scene.narration}`,
+      promptBlock(`Prompt Gambar — ${scene.title} (ENGLISH)`, scene.imagePrompt),
+      promptBlock(`Prompt Video — ${scene.title} (ENGLISH)`, scene.videoPrompt)
+    ]);
     return textResult([
-      "KONSEP ANIMASI WOWSERU AI v0.3.2", `Produk/brand: ${a.brand_product || "Belum ditentukan"}`, `Brief disetujui: ${a.brief}`,
-      `Detail produk/USP: ${a.product_details || "Belum diberikan; jangan mengarang klaim produk."}`, `Target audiens: ${a.audience || "Umum"}`,
-      `Style: ${a.style}`, `Gaya visual: ${a.visual_style || a.style}`, `Durasi: ${a.duration_seconds} detik`, `Resolusi: ${a.resolution}`,
-      `Jumlah scene: ${a.scene_count}`, `Bahasa: ${a.language}`, `Mode: ${a.mode}`, "", "KONSEP UTAMA DAN HOOK",
-      `Hook: buka dengan visual yang paling jelas dan relevan dengan brief: ${a.brief}.`, "Pesan utama: satu ide utama, tanpa klaim yang tidak didukung.",
-      "", "PROMPT THUMBNAIL (ENGLISH — READY TO COPY)", thumbnail, "", "RANGKAIAN SCENE", ...scenes,
-      "", "CONTINUITY CHECKLIST", "- Pertahankan bentuk, warna, proporsi, kemasan, label, logo, aksesori, dan detail yang diberikan.",
-      "- Jaga konsistensi karakter, posisi objek, arah gerak, pencahayaan, lokasi, dan orientasi kamera.",
-      "- Jangan mengarang USP, bahan, harga, testimoni, garansi, promo, atau tautan pembelian.",
+      "KONSEP ANIMASI WOWSERU AI",
+      `Produk/brand: ${a.brand_product || "Tidak disebutkan"}`,
+      `Brief disetujui: ${a.brief}`,
+      `Detail produk/USP: ${a.product_details || "Tidak diberikan; tidak ada klaim produk yang akan ditambahkan."}`,
+      `Target audiens: ${a.audience || "Umum"}`,
+      `Style animasi: ${a.style}`,
+      `Gaya visual: ${a.visual_style || a.style}`,
+      `Durasi total: ${a.duration_seconds} detik`,
+      `Resolusi: ${a.resolution}`,
+      `Jumlah scene: ${a.scene_count}`,
+      `Bahasa: ${a.language}`,
+      `Mode: ${a.mode}`,
+      "",
+      "KONSEP UTAMA DAN HOOK",
+      `Konsep: ${scenes.map((scene) => scene.idea).join(" → ")}`,
+      `Hook: ${hook}`,
+      "Pesan utama: sampaikan ide visual dari brief tanpa menambahkan klaim produk yang tidak diberikan.",
+      "",
+      promptBlock("PROMPT THUMBNAIL (ENGLISH — READY TO COPY)", thumbnail),
+      "",
+      "RANGKAIAN SCENE",
+      ...sceneOutput,
+      "",
+      "CONTINUITY CHECKLIST",
+      "- Pertahankan identitas, bentuk, warna, proporsi, kemasan, label, logo, aksesori, dan detail yang memang diberikan.",
+      "- Scene berikutnya dimulai dari posisi akhir, arah gerak, pencahayaan, dan tata letak scene sebelumnya.",
+      "- Hindari anatomi rusak, flicker, jitter, objek muncul/hilang, teks acak, watermark, dan klaim produk yang tidak didukung.",
       `Link produk/konten: ${a.product_link || "Tidak diberikan"}`,
-      "Catatan: ini konsep dan prompt tekstual, bukan video hasil render."
+      "",
+      "Catatan: keluaran ini adalah konsep dan prompt tekstual untuk generator gambar/video, bukan file video hasil render."
     ].join("\n"));
   });
 
@@ -137,10 +183,30 @@ function makeServer(env) {
     const panelSecs = a.scene_duration_seconds / 6;
     const output = panels.map((p, i) => {
       const from = (panelSecs * i).toFixed(1), to = (panelSecs * (i + 1)).toFixed(1);
-      const prompt = `Create storyboard panel ${i + 1} of 6 for a ${a.style} animation, aspect ratio ${a.aspect_ratio}. SCENE CONCEPT: ${a.concept}. SUBJECT LOCK: ${subject}. SHOT: ${p[1]}. ACTION: ${p[2]}. CAMERA: ${p[3]}. CONTINUITY: preserve exact subject silhouette, colors, proportions, materials, accessories, supplied labels, environment layout, lighting direction, and screen direction across all panels. No unsupported claims, fake logos, random lettering, watermark, extra parts, or unexplained changes.`;
-      return `PANEL ${i + 1} — ${p[0]}\nTiming: ${from}-${to} seconds\nFraming: ${p[1]}\nAksi: ${p[2]}\nKamera: ${p[3]}\nPrompt gambar (English):\n${prompt}`;
+      return `PANEL ${i + 1} — ${p[0]}\nTiming: ${from}-${to} seconds\nFraming: ${p[1]}\nAksi: ${p[2]}\nKamera: ${p[3]}`;
     });
-    return textResult([`STORYBOARD — SCENE ${a.scene_number}`, `Konsep: ${a.concept}`, `Style: ${a.style}`, `Karakter/objek: ${subject}`, `Durasi: ${a.scene_duration_seconds} detik`, `Rasio: ${a.aspect_ratio}`, "", "GRID STORYBOARD 2×3 — ENAM PANEL", ...output, "", "CONTINUITY LOCK", `Subject lock: ${subject}. Preserve silhouette, colors, proportions, materials, accessories, lighting, environment layout, and screen direction.`, "Narasi dan sound design disesuaikan dengan brief; jangan membuat klaim yang tidak didukung.", "Output ini enam prompt panel tekstual, bukan gambar yang sudah dirender. Susun keenam hasil dalam grid 2×3.", "Tambahkan teks saat editing untuk menghindari teks acak dari generator."].join("\n"));
+    const gridPrompt = `Create a single storyboard sheet arranged in an exact 2-column by 3-row grid (2×3), containing exactly SIX clearly separated panels, read left-to-right then top-to-bottom. STYLE: ${a.style}. ASPECT RATIO: ${a.aspect_ratio}. SCENE CONCEPT: ${a.concept}. SUBJECT / CHARACTER LOCK: ${subject}. PANEL 1 — ESTABLISHING SHOT: wide shot introduces the environment, subject, light direction, and key props. PANEL 2 — SUBJECT INTRODUCTION: medium hero shot reveals the subject's defining silhouette, material, color, and shape. PANEL 3 — PRIMARY ACTION: medium close-up shows the main action: ${a.concept}. PANEL 4 — DETAIL / RESPONSE: close-up shows a relevant detail or consequence without inventing product features. PANEL 5 — VISUAL PEAK: memorable hero close-up with a clean silhouette and expressive action. PANEL 6 — END FRAME / TRANSITION: resolve the action into a composed final frame. Maintain strict continuity of identity, anatomy, silhouette, proportions, colors, materials, accessories, labels, environment layout, lighting direction, and screen direction across all six panels. Each panel must be visually distinct, sequential, and contained in its own grid cell. No extra panels, no missing panels, no panel collage outside the grid, no random text, no fake logos, no watermark, no deformation, and no unsupported claims.`;
+    return textResult([
+      `STORYBOARD — SCENE ${a.scene_number}`,
+      `Konsep: ${a.concept}`,
+      `Style: ${a.style}`,
+      `Karakter/objek: ${subject}`,
+      `Durasi: ${a.scene_duration_seconds} detik`,
+      `Rasio: ${a.aspect_ratio}`,
+      "",
+      "GRID STORYBOARD 2×3 — TEPAT ENAM PANEL",
+      ...output,
+      "",
+      "PROMPT GAMBAR STORYBOARD (ENGLISH — ONE COMPLETE 2×3 GRID)",
+      "```text",
+      gridPrompt,
+      "```",
+      "",
+      "CONTINUITY LOCK",
+      `Subject lock: ${subject}. Preserve silhouette, colors, proportions, materials, accessories, lighting, environment layout, and screen direction.`,
+      `Narasi/dialog (${a.language || "bahasa sesuai brief"}): ${a.narration || "Ikuti narasi yang telah ditentukan pada brief; jangan menambahkan klaim yang tidak didukung."}`,
+      "Catatan: prompt ini meminta satu lembar storyboard 2×3 berisi tepat enam panel; hasilnya tetap perlu dirender di generator gambar."
+    ].join("\n"));
   });
 
   server.registerTool("generate_animation_prompts", {
@@ -162,7 +228,7 @@ function makeServer(env) {
     const timeline = [`0.0-${t1}s: Establish subject and environment with a readable composition.`, `${t1}-${t2}s: Execute the primary action smoothly with plausible weight and contact.`, `${t2}-${t3}s: Show key detail or emotional beat while preserving identity.`, `${t3}-${duration.toFixed(1)}s: Settle into a clean hero frame suitable for transition.`];
     const imagePrompt = `STORY CONCEPT: ${a.scene}\nCONTINUITY LOCK: ${continuity}\nCONSISTENT TALENT / CHARACTER: ${subject}; preserve identity, silhouette, proportions, colors, materials, and accessories.\nPRODUCT / OBJECT CONSISTENCY: show only details supplied in the brief; do not invent specifications, labels, logos, or claims.\nVISUAL CONTINUITY: ${a.camera_direction || "Clean cinematic composition and motivated camera angle."} Keep lighting direction, background geography, screen direction, and object placement coherent.\nSTYLE: ${a.style}; portrait ${a.aspect_ratio}; polished composition, clear focal point.\nIMPORTANT / NEGATIVE CONSTRAINTS: ${negative}. No tiny generated text; add typography during editing.`;
     const videoPrompt = `Animate this scene in ${a.style}, portrait ${a.aspect_ratio}, total duration ${duration} seconds.\nSCENE: ${a.scene}\nSUBJECT LOCK: ${subject}. Keep identity and defining features unchanged.\nCONTINUITY LOCK: ${continuity}\nCAMERA DIRECTION: ${a.camera_direction || "Smooth motivated dolly-in, stable horizon and controlled focus."}\nTIMED ACTION: ${timeline.join(" ")}\nMOTION QUALITY: coherent acceleration, natural contact and weight, no sudden teleporting or frame-to-frame shape changes.\nIMPORTANT / NEGATIVE CONSTRAINTS: ${negative}.`;
-    return textResult(["WOWSERU AI ANIMASI — PRODUCTION PROMPTS", `Scene ${a.scene_number}: ${a.scene}`, `Style: ${a.style}`, `Subject: ${subject}`, `Aspect ratio: ${a.aspect_ratio}`, `Duration: ${duration}s`, "", "IMAGE PROMPT (ENGLISH — READY TO COPY)", imagePrompt, "", "VIDEO PROMPT (ENGLISH — READY TO COPY)", videoPrompt, "", "TIMING BREAKDOWN", ...timeline, "", "CONTINUITY CHECKLIST", `- Subject: ${subject}.`, `- Visual lock: ${continuity}.`, `- Negative constraints: ${negative}`, `- Narasi: ${a.narration || "Belum diberikan; susun sesuai brief dan bahasa yang diminta."}`, "Catatan: tool ini menghasilkan prompt tekstual, bukan file gambar atau video final."].join("\n"));
+    return textResult(["WOWSERU AI ANIMASI — PRODUCTION PROMPTS", `Scene ${a.scene_number}: ${a.scene}`, `Style: ${a.style}`, `Subject: ${subject}`, `Aspect ratio: ${a.aspect_ratio}`, `Duration: ${duration}s`, "", "IMAGE PROMPT (ENGLISH — READY TO COPY)", "```text", imagePrompt, "```", "", "VIDEO PROMPT (ENGLISH — READY TO COPY)", "```text", videoPrompt, "```", "", "TIMING BREAKDOWN", ...timeline, "", "CONTINUITY CHECKLIST", `- Subject: ${subject}.`, `- Visual lock: ${continuity}.`, `- Negative constraints: ${negative}`, `- Narasi: ${a.narration || "Belum diberikan; susun sesuai brief dan bahasa yang diminta."}`, "Catatan: tool ini menghasilkan prompt tekstual, bukan file gambar atau video final."].join("\n"));
   });
   return server;
 }
