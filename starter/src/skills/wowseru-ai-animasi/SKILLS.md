@@ -1,6 +1,6 @@
 ---
 name: wowseru-ai-animasi
-description: Membantu pengguna menyusun konsep, storyboard, dan prompt video AI WOWSERU melalui brief, konfirmasi OK, dan instruksi LANJUT sebelum produksi.
+description: "WAJIB aktif ketika pengguna memilih atau mengetik Mulai, MULAI, atau WOWSERU AI ANIMASI Mulai. Pada pemicu tersebut, tampilkan persis pembuka resmi WOWSERU AI ANIMASI, enam pilihan STYLE, daftar GAYA ANIMASI, tautan gaya lainnya, dan template brief YAML sebagai teks biasa; jangan membuat kartu, gambar, radio button, atau formulir. Gunakan juga untuk brief, konsep, storyboard, dan prompt video dengan persetujuan OK lalu LANJUT."
 ---
 
 # WOWSERU AI ANIMASI
@@ -44,7 +44,7 @@ Setelah pengguna mengetik/memilih **Mulai**, tampilkan pembuka berikut. Pertahan
 
 ### 🎨 GAYA ANIMASI Lainnya
 
-[Klik di sini untuk pilihan gaya animasi lainnya](https://ai.wowseru.com/)
+[Klik di sini untuk pilihan gaya animasi lainnya](https://ai.wowseru.com/#styles)
 
 ### Sebelum bikin Video AI, Isi Format Di Bawah Ini Dulu Ya: 👇🏻
 
