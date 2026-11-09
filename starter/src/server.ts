@@ -29,7 +29,7 @@ await app.register(cors, { origin: true, methods: ["GET", "POST", "DELETE", "OPT
 
 function makeMcpServer() {
   const server = new McpServer(
-    { name: "wowseru-ai-animasi", version: "0.3.2" },
+    { name: "wowseru-ai-animasi", version: "0.5.1" },
     { instructions: skillInstructions }
   );
 
@@ -251,7 +251,7 @@ function makeMcpServer() {
 app.get("/health", async () => ({
   service: "wowseru-ai",
   status: "ok",
-  version: "0.3.2",
+  version: "0.5.1",
   skill_loaded: true,
   mcp_endpoint: "/mcp",
 }));
