@@ -1,0 +1,8 @@
+WOWSERU AI ANIMASI v0.5.3
+
+- Sinkronisasi endpoint MCP ke Worker wowseru-ai-animasi-mcp.
+- Sinkronisasi versi metadata plugin, app, starter, dan Worker ke 0.5.3.
+- Sinkronisasi nama Worker dan identitas server MCP.
+- Mempertahankan skill, conversation starter Mulai, logo, ikon, dan lima tools.
+
+Catatan: rilis ini belum membuktikan bahwa host ChatGPT memuat onboarding skill dan menampilkan salam pembuka sesuai spesifikasi. Uji itu tetap wajib dilakukan setelah submission/pemasangan versi ini. Nama Developer yang tampil di dashboard dapat berasal dari akun penerbit dan tidak dijamin berubah melalui manifest.

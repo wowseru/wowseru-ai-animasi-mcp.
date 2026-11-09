@@ -22,3 +22,20 @@ npx wrangler deploy
 
 ## Penting: status validasi
 Worker source yang disertakan masih berasal dari adaptasi v0.3.2. Status OK/LANJUT disimpan di `Map` dalam memori dan dapat hilang saat isolate berubah/restart. Ini belum merupakan penyimpanan persetujuan tahan lama. Sebelum produksi, implementasikan Durable Objects/KV sesuai desain yang diuji, lalu jalankan integration test untuk lima tool MCP. Jangan menganggap ZIP ini sudah di-deploy atau production-verified.
+
+
+## v0.5.2 restoration
+
+This release preserves the original repository layout (Agent, Claude, and Codex manifests; starter project; Worker; and brand assets), restores the complete approval and production workflow, and aligns the product identity and welcome copy to WOWSERU AI ANIMASI.
+
+## v0.5.2 release candidate
+- Uses “Mulai” as the plugin conversation starter to invoke the WOWSERU welcome and brief template.
+- Preserves the existing MCP worker, starter project, assets, skills, and approval tools.
+- This ZIP has been structurally validated; live submission-dashboard rendering and deployed-worker behavior still require testing.
+
+
+## v0.5.2 consistency fix
+- Canonical skill content is synchronized across plugin, starter, and Worker copies.
+- MCP server instructions are generated from the canonical skill, including the exact `#styles` link and required plain-text welcome template.
+- Worker README and package version are aligned at v0.5.2.
+- No Cloudflare deployment has been performed by this package build.
