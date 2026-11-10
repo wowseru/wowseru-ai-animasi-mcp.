@@ -1,0 +1,12 @@
+WOWSERU AI ANIMASI v0.5.4
+
+- Pembuka dua tahap: sambutan sebelum Mulai; pembuka lengkap setelah Mulai.
+- Logo asli dipertahankan sebagai identitas visual aplikasi melalui manifest.
+- Skill utama, salinan skill, dan instruksi Worker disinkronkan.
+- Endpoint MCP tetap menggunakan Worker baru yang sudah diuji.
+- Versi metadata plugin, app, starter, dan Worker disinkronkan ke 0.5.4.
+- Lima tools, alur OK lalu LANJUT, template brief, dan aset logo dipertahankan.
+
+Catatan pengujian: paket ini belum membuktikan perilaku host ChatGPT. Setelah dipasang,
+uji tampilan logo aplikasi dan dua tahap pembuka di ChatGPT. Manifest logo mengatur
+identitas visual aplikasi; tidak menjamin logo tampil inline di dalam pesan chat.

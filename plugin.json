@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "wowseru-ai-animasi",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "description": "WOWSERU AI ANIMASI membantu membuat konsep animasi, thumbnail, storyboard enam panel per scene, serta prompt video bertiming dengan kontinuitas visual.",
   "author": {
     "name": "WOWSERU"
@@ -96,11 +96,18 @@
         },
         "commerce": false,
         "commerce_description": "Plugin ini tidak menjual produk, memproses pembayaran, atau melakukan transaksi.",
-        "demo_recording_url": "https://www.youtube.com/watch?v=4m8VR_rFOeU"
+        "demo_recording_url": "https://www.youtube.com/watch?v=4m8VR_rFOeU",
+        "releaseNotes": "v0.5.4: Menetapkan dua tahap pembuka WOWSERU: sambutan sebelum Mulai dan pembuka lengkap setelah Mulai. Sinkronisasi skill dan instruksi Worker."
       },
       "publication": {
         "release_notes": "WOWSERU AI ANIMASI v0.5.2 — menyinkronkan instruksi skill canonical pada plugin dan MCP Worker; mempertahankan template welcome, logo, lima tool MCP, serta alur OK → LANJUT."
-      }
+      },
+      "developerName": "WOWSERU",
+      "defaultPrompt": [
+        "Mulai"
+      ],
+      "logo": "./assets/logo.png",
+      "logoDark": "./assets/logo-dark.png"
     }
   }
 }
