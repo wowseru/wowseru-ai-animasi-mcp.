@@ -1,8 +1,10 @@
 {
   "name": "wowseru-ai-animasi",
-  "version": "0.4.2",
+  "version": "0.5.4",
   "description": "WOWSERU AI ANIMASI: konsep animasi, storyboard, dan prompt gambar/video.",
-  "author": { "name": "WOWSERU" },
+  "author": {
+    "name": "WOWSERU"
+  },
   "skills": "../skills",
   "homepage": "https://ai.wowseru.com/"
 }
