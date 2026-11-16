@@ -1,3 +1,176 @@
+import { McpServer } from "@modelcontextprotocol/server";
+import { createMcpHandler } from "agents/mcp/server";
+import { z } from "zod";
+
+// Approval state is stored in Cloudflare Durable Object.
+const APPROVAL_TTL_MS = 2 * 60 * 60 * 1000;
+
+function approvalStore(env) {
+  if (!env.APPROVALS) throw new Error("Binding Durable Object APPROVALS belum dikonfigurasi.");
+  const id = env.APPROVALS.idFromName("wowseru-approval-store");
+  return env.APPROVALS.get(id);
+}
+
+async function getApproval(env, id) {
+  const response = await approvalStore(env).fetch("https://approval-store/get", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ approval_id: id })
+  });
+  if (response.status === 404) return undefined;
+  if (!response.ok) throw new Error(`Gagal membaca approval: HTTP ${response.status}`);
+  return response.json();
+}
+
+async function saveApproval(env, id, state) {
+  const response = await approvalStore(env).fetch("https://approval-store/set", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ approval_id: id, state })
+  });
+  if (!response.ok) throw new Error(`Gagal menyimpan approval: HTTP ${response.status}`);
+}
+
+async function markApprovalLanjut(env, id) {
+  const response = await approvalStore(env).fetch("https://approval-store/lanjut", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ approval_id: id })
+  });
+  if (response.status === 404) return undefined;
+  if (!response.ok) throw new Error(`Gagal memperbarui approval: HTTP ${response.status}`);
+  return response.json();
+}
+
+function textResult(text, isError = false) {
+  return { content: [{ type: "text", text }], ...(isError ? { isError: true } : {}) };
+}
+
+function makeServer(env) {
+  const skillInstructions = `# WOWSERU AI ANIMASI
+
+Gunakan Bahasa Indonesia secara default.
+Jangan menyebut WIC sebagai brand tools.
+Jangan mengklaim menghasilkan file video final.
+
+## PEMBUKA
+Sebelum pengguna menekan Mulai:
+Selamat datang di WOWSERU AI ANIMASI 🎬
+Tekan Mulai untuk memulai.
+
+Setelah pengguna mengetik Mulai, tampilkan:
+- Enam STYLE: Animasi Umum, Animasi Objek Bicara, Animasi Objek Bicara (Realistis), Animasi Fakta Unik, Animasi Cerita Horror, Animasi Cerita Rakyat.
+- GAYA ANIMASI: 3D Cartoon, 3D Cartoon Pixar-Style, Realistic Cinematic, Anime (Japan Style), Flannel Animation Style, Cinematic Action Movie Still Style, Studio Ghibli, Donghua, Claymation, 2.5D Style, Webtoon Style.
+- Link: https://ai.wowseru.com/#styles
+
+Template brief:
+\`\`\`yaml
+• Nama Brand + Produk :
+• Detail Produk / Usp:
+• Target Audience:
+• Resolusi Video: Tiktok Vertical 9:16
+• Durasi Video(Detik): 30 Detik
+• Adegan (Scene): 3
+• Pakai Narasi?: Ya / Tidak
+• Pakai Model Manusia/Karakter : Ya / Tidak
+• Link Produk/Konten: Opsional
+• Upload Foto Karakter + Produk: Opsional
+• Mode: Normal / Deep Research
+• Style Animasi : Animasi Objek Bicara (Realistis)
+• Gaya Visual : Realistic Cinematic
+• Request Bahasa :
+
+• Ide Cerita Scene 1 :
+• Ide Cerita Scene 2 :
+• Ide Cerita Scene 3 :
+\`\`\`
+
+## PERSETUJUAN
+1. Susun brief lengkap.
+2. Tampilkan kepada pengguna.
+3. Minta balasan OK.
+4. Jika ada perubahan, perbarui dan minta OK lagi.
+5. Setelah OK, simpan approval_id.
+6. Tunggu LANJUT.
+7. Jangan produksi sebelum OK dan LANJUT.
+
+## OUTPUT PRODUKSI
+1. Ringkasan brief.
+2. Konsep dan hook.
+3. Prompt thumbnail.
+4. Storyboard 2 kolom x 3 baris, tepat enam panel per scene.
+5. Prompt video setiap scene.
+6. Narasi/dialog.
+7. CTA dan overlay.
+8. Continuity checklist.
+9. Penutup: Terima kasih sudah menggunakan Tools AI Animasi WOWSERU.
+
+Setiap prompt generator wajib berada dalam code block terpisah.
+Jangan mengarang klaim produk, spesifikasi, harga, atau testimoni.
+`;
+
+  const server = new McpServer(
+    { name: "wowseru-ai-animasi-mcp", version: "0.5.7" },
+    { instructions: skillInstructions }
+  );
+
+  // TOOL 1
+  server.registerTool("confirm_animation_brief", {
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      openWorldHint: false
+    },
+    description: "Catat persetujuan brief terbaru setelah pengguna membalas OK.",
+    inputSchema: {
+      brief: z.string().min(1),
+      confirmation_text: z.literal("OK")
+    }
+  }, async ({ brief, confirmation_text }) => {
+    if (confirmation_text !== "OK") {
+      return textResult("Persetujuan belum tercatat. Tunggu OK.", true);
+    }
+
+    const approval_id = crypto.randomUUID();
+
+    await saveApproval(env, approval_id, {
+      brief: brief.trim(),
+      approvedAt: Date.now()
+    });
+
+    return textResult(
+      `Brief disetujui. approval_id: ${approval_id}. Tunggu LANJUT sebelum produksi.`
+    );
+  });
+
+  // TOOL 2
+  server.registerTool("confirm_animation_lanjut", {
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      openWorldHint: false
+    },
+    description: "Catat instruksi LANJUT setelah brief disetujui.",
+    inputSchema: {
+      approval_id: z.string().uuid(),
+      confirmation_text: z.literal("LANJUT")
+    }
+  }, async ({ approval_id, confirmation_text }) => {
+    const state = await getApproval(env, approval_id);
+
+    if (!state || confirmation_text !== "LANJUT") {
+      return textResult("LANJUT belum diterima. Periksa approval_id.", true);
+    }
+
+    const updated = await markApprovalLanjut(env, approval_id);
+
+    if (!updated) {
+      return textResult("Approval tidak ditemukan atau kedaluwarsa.", true);
+    }
+
+    return textResult(`LANJUT tercatat. approval_id: ${approval_id}`);
+  });
+
   // TOOL 3
   server.registerTool("create_animation_concept", {
     annotations: {
