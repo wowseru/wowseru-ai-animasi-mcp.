@@ -1,7 +1,8 @@
+
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "wowseru-ai-animasi",
-  "version": "0.5.4",
+  "version": "0.5.7",
   "description": "WOWSERU AI ANIMASI membantu membuat konsep animasi, thumbnail, storyboard enam panel per scene, serta prompt video bertiming dengan kontinuitas visual.",
   "author": {
     "name": "WOWSERU"
@@ -61,7 +62,7 @@
               "description": "Mencatat persetujuan pengguna terhadap brief dan konsep.",
               "prompt": "OK, konsep dan brief sudah sesuai.",
               "tools_triggered": "confirm_animation_brief",
-              "expected_behavior": "Mencatat persetujuan konsep/brief terbaru dan mengembalikan status persetujuan serta approval_id yang dapat dipakai pada tahap berikutnya."
+              "expected_behavior": "Mencatat persetujuan konsep dan brief terbaru serta mengembalikan status persetujuan dan approval_id yang dapat dipakai pada tahap berikutnya."
             },
             {
               "description": "Mencatat persetujuan untuk memulai produksi.",
@@ -74,6 +75,12 @@
               "prompt": "Buat paket produksi lengkap untuk brief yang sudah disetujui: thumbnail, storyboard enam panel 2x3 per scene, prompt video bertimeline dan narasi.",
               "tools_triggered": "create_storyboard, generate_animation_prompts",
               "expected_behavior": "Menghasilkan storyboard enam panel dan prompt video terpisah untuk setiap scene, lengkap dengan timeline, narasi sesuai bahasa brief, continuity lock, dan negative prompt. Scene berikutnya melanjutkan frame terakhir scene sebelumnya."
+            },
+            {
+              "description": "Menghasilkan prompt gambar dan video untuk scene tertentu.",
+              "prompt": "Buat prompt gambar dan video untuk scene ketiga promosi donat. Gunakan karakter yang sama, gaya Realistic Cinematic, format vertikal 9:16, dan durasi 10 detik.",
+              "tools_triggered": "generate_animation_prompts",
+              "expected_behavior": "Menghasilkan prompt gambar dan video terpisah dengan detail aksi, gerakan kamera, durasi, continuity lock, dan negative prompt. Identitas karakter serta produk harus konsisten."
             }
           ],
           "negative": [
@@ -96,11 +103,10 @@
         },
         "commerce": false,
         "commerce_description": "Plugin ini tidak menjual produk, memproses pembayaran, atau melakukan transaksi.",
-        "demo_recording_url": "https://www.youtube.com/watch?v=4m8VR_rFOeU",
-        "releaseNotes": "v0.5.4: Menetapkan dua tahap pembuka WOWSERU: sambutan sebelum Mulai dan pembuka lengkap setelah Mulai. Sinkronisasi skill dan instruksi Worker."
+        "demo_recording_url": "https://www.youtube.com/watch?v=4m8VR_rFOeU"
       },
       "publication": {
-        "release_notes": "WOWSERU AI ANIMASI v0.5.2 — menyinkronkan instruksi skill canonical pada plugin dan MCP Worker; mempertahankan template welcome, logo, lima tool MCP, serta alur OK → LANJUT."
+        "release_notes": "WOWSERU AI ANIMASI v0.5.7 — memperbarui metadata review, menyediakan lima positive test cases dan tiga negative test cases, serta menyinkronkan alur persetujuan OK dan LANJUT."
       },
       "developerName": "WOWSERU",
       "defaultPrompt": [
